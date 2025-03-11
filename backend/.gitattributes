@@ -1,0 +1,7 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Denote files that should always use LF line endings
+*.sh text eol=lf
+*.js text eol=lf
+*.json text eol=lf
