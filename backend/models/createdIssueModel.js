@@ -22,3 +22,8 @@ const crIssueSchema = new Schema({
 	status: enum["created","assigned","edited","solved"]
 	// company object Id
 })
+
+const crIssueModel = mongoose.model('crIssue',crIssueSchema)
+
+export crIssueModel 
+
