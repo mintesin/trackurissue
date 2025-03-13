@@ -26,8 +26,12 @@ const employeeSchema = new Schema({
 	country: String,
 	favoriteWord: String,
 	password: String
+	authorization: enum["companyadmin","teamleader","teammemebr"]
 	//comapny object Id must be included
+	//team object id must be included
 
 })
 
 const employeeModel = mongoose.model("employee",employeeSchema)
+
+export default employeeModel

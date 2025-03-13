@@ -21,3 +21,5 @@ const assignedIssueSchema = new Schema({
 })
 
 const assignedIssueModel = mongoose.model("assignedIssue",assignedIssueSchema)
+
+export default assignedIssueModel
