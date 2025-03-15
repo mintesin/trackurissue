@@ -20,16 +20,53 @@ import mongoose from 'mongoose'
 const Schema = mongoose.Schema 
 
 const companySchema = new Schema({
-	companyName:String,
-	adminName: String,
-	shortDescription:String,
-	adminEmail:String,
-	streetNumber:Number,
-	city:String,
-	state: String,
-	zipcode:Number,
-	country:String
+	companyName:{
+		type: String, 
+		required:true, 
+		trim:true
+	},
+	adminName: {
+		type: String, 
+		required:true, 
+		trim:true
+	},
+	shortDescription:{
+		type: String, 
+		required:true, 
+		trim:true},
+	adminEmail:{
+		type: String, 
+		required:true, 
+		trim:true
+	},
+	streetNumber:{type: Number, 
+		required:true, 
+		trim:true
+	},
+	city: {
+		type: String, 
+		required:true, 
+		trim:true
+	},
+	state: {
+		type: String, 
+		required:true, 
+		trim:true
+	},
+	zipcode:{
+		type: String, 
+		required:true, 
+		trim:true
+	},
+	country:{
+		type: String, 
+		required:true, 
+		trim:true
+	},  
+
 })
+
+
 
 const companyModel = mongoose.model("company",companySchema)
 

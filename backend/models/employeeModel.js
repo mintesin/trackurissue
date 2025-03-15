@@ -17,20 +17,28 @@ import mongoose from "mongoose"
 const Schema = mongoose.Schema
 
 const employeeSchema = new Schema({
-	firstName: String,
-	lastName: String,
-	streetNumber: String,
-	city: String,
-	state: String,
-	zipcode: Number,
-	country: String,
-	favoriteWord: String,
-	password: String
-	authorization: enum["companyadmin","teamleader","teammemebr"]
-	//comapny object Id must be included
-	//team object id must be included
+	firstName: {type: String,required: true,trim:true},
+	lastName: {type: String,required: true,trim:true},
+	streetNumber: {type: String,required: true,trim:true},
+	birthDate:{type:Date,required:true},
+	city:{type: String,required: true,trim: true},
+	state: {type: String,required: true,trim:true},
+	zipcode:{type: String,required: true,trim:true},
+	country: {type: String,required: true,trim:true},
+	favoriteWord: {type: String,required: true,trim:true},
+	password: {type: String,required: true,trim:true},
+	authorization: {type: String,enum:["admin","teamleader","teammemebr"],required:true,default:"teammember",trim:true},
+	company:{type:Schema.Types.ObjectId,required:true},
+	team: {type:Schema.Types.ObjectId,required:false}
 
 })
+
+employeeSchema.virtual('fullname').get(()=>{
+	return this.firstName+this.lastName
+})
+
+employeeSchema.set('toJSON',{virtuals: true});
+employeeSchema.set('toObject',{virtuals: true});
 
 const employeeModel = mongoose.model("employee",employeeSchema)
 
