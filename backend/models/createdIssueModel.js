@@ -13,17 +13,37 @@ This is a model for the created issue to be displayed on the admin dashboard
 import mongoose from "mongoose" 
 
 const Schema = mongoose.Schema 
+
 const crIssueSchema = new Schema({
-	topic:String,
-	description:String,
-	createdAt: Date
-	createdBy: Date,
-	urgency: enum['urgent'],
-	status: enum["created","assigned","edited","solved"]
-	// company object Id
+	topic:{type: String,required:true},
+	description:{
+		type: String, 
+		required:true
+	},
+	createdAt:{ 
+		type: Date, 
+		default: Date.now 
+	},
+	createdBy: {
+		type:Schema.Types.ObjectId, 
+		required:true
+	},
+	urgency: {
+		type:String, 
+		enum: ['urgent','notUrgent'], 
+		default:'notUrgent'
+	},
+	status: {
+		type:String, 
+		enum:["created","assigned","edited","solved"], 
+		default:"created"
+	},
+	company: {
+		type:Schema.Types.ObjectId, 
+		required:true}
 })
 
-const crIssueModel = mongoose.model('crIssue',crIssueSchema)
+const crIssueModel = mongoose.model('createdIssue',crIssueSchema)
 
-export crIssueModel 
+export default crIssueModel
 

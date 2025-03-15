@@ -13,12 +13,25 @@ import mongoose from 'mongoose'
 const Schema = mongoose.Schema 
 
 const assignedIssueSchema = new Schema({
-	topic: String,
-	description: String,
-	assignedAt: Date,
-	urgency: enum['urgent'],
-	// team assigned to object ID
+	
+	topic: {type:String,required:true,maxLenght:100},
+	description: {type:String, required:true},
+	assignedAt: {type:Date,required:true},
+	urgency: {type:String,enum: ['urgent','notUrgent']},
+	team:{type: Schema.Types.ObjectId, ref: "teams",required:true}
+
 })
+
+assignedIssueSchema.virtual('assigneddate').get(function() {
+    const assignedDate = new Date(this.assignedAt);
+    const day = String(assignedDate.getDate()).padStart(2, '0');
+    const month = String(assignedDate.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = assignedDate.getFullYear();
+    return `${month}/${day}/${year}`; // Format as MM/DD/YYYY
+});
+
+assignedIssueSchema.set('toJSON', { virtuals: true });
+assignedIssueSchema.set('toObject', { virtuals: true });
 
 const assignedIssueModel = mongoose.model("assignedIssue",assignedIssueSchema)
 
