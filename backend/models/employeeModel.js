@@ -17,19 +17,69 @@ import mongoose from "mongoose"
 const Schema = mongoose.Schema
 
 const employeeSchema = new Schema({
-	firstName: {type: String,required: true,trim:true},
-	lastName: {type: String,required: true,trim:true},
-	streetNumber: {type: String,required: true,trim:true},
-	birthDate:{type:Date,required:true},
-	city:{type: String,required: true,trim: true},
-	state: {type: String,required: true,trim:true},
-	zipcode:{type: String,required: true,trim:true},
-	country: {type: String,required: true,trim:true},
-	favoriteWord: {type: String,required: true,trim:true},
-	password: {type: String,required: true,trim:true},
-	authorization: {type: String,enum:["admin","teamleader","teammemebr"],required:true,default:"teammember",trim:true},
-	company:{type:Schema.Types.ObjectId,required:true},
-	team: {type:Schema.Types.ObjectId,required:false}
+	firstName: {
+		type: String, 
+		required: true, 
+		trim:true
+	},
+	lastName: {
+		type: String, 
+		required: true, 
+		trim:true
+	},
+	streetNumber: {
+		type: String, 
+		required: true,
+		trim:true
+	},
+	birthDate:{
+		type:Date, 
+		required:true
+	},
+	city:{type: String, 
+		required: true, 
+		trim: true
+	},
+	state: {
+		type: String, 
+		required: true, 
+		trim:true
+	},
+	zipcode:{
+		type: String, 
+		required: true, 
+		trim:true
+	},
+	country: {
+		type: String,
+		required: true,
+		trim:true
+	},
+	favoriteWord: {
+		type: String,
+		required: true,
+		trim:true
+	},
+	password: {
+		type: String,
+		required: true,
+		trim:true
+	},
+	authorization: {
+		type: String,
+		enum:["admin","teamleader","teammemebr"],
+		required:true,
+		default:"teammember",
+		trim:true
+	},
+	company:{
+		type:Schema.Types.ObjectId,
+		required:true
+	},
+	team: {
+		type:Schema.Types.ObjectId,
+		required:false
+	}
 
 })
 

@@ -14,11 +14,27 @@ const Schema = mongoose.Schema
 
 const assignedIssueSchema = new Schema({
 	
-	topic: {type:String,required:true,maxLenght:100},
-	description: {type:String, required:true},
-	assignedAt: {type:Date,required:true},
-	urgency: {type:String,enum: ['urgent','notUrgent']},
-	team:{type: Schema.Types.ObjectId, ref: "teams",required:true}
+	topic: {
+		type:String,
+		required:true,
+		maxLenght:100
+	},
+	description: {
+		type:String, 
+		required:true
+	},
+	assignedAt: {
+		type:Date,
+		required:true
+	},
+	urgency: {
+		type:String,
+		enum: ['urgent','notUrgent']
+	},
+	team:{
+		type: Schema.Types.ObjectId, 
+		ref: "teams",required:true
+	}
 
 })
 

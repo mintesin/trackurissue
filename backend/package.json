@@ -16,11 +16,13 @@
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "express-async-handler": "^1.2.0",
     "express-validator": "^7.2.1",
     "http-errors": "^2.0.0",
     "joi": "^17.13.3",
     "lodash": "^4.17.21",
     "mongoose": "^8.12.1",
+    "nodemailer": "^6.10.0",
     "passport": "^0.7.0",
     "save-dev": "^0.0.1-security"
   },
