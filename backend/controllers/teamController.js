@@ -1,19 +1,23 @@
-import express-async-handler from "express-async-handler" 
+import expressAsyncHandler from 'express-async-handler';
 
-const asynchandler = express-async-handler 
+const asynchandler =expressAsyncHandler
 
-exports.teamcreation = asynchandler (async(req,res,next)=>{
+export const teamdashboard = asynchandler (async(req,res,next)=>{
+    res.send("Not Implemented: team dashboard....")
+})
+
+export const teamcreationGet = asynchandler (async(req,res,next)=>{
     res.send("Not Implemented: team creation....")
 })
 
-exports.teamdeletion = asynchandler (async (req,res,next)=>{
+export const teamdeletionGet = asynchandler (async (req,res,next)=>{
     res.send("Not Implemented: team deletion...")
 })
 
-exports.addMemeber = asynchandler (async (req,res,next) =>{
+export const addMemeberGet = asynchandler (async (req,res,next) =>{
     res.send("Not implemented: Memeber addition ")
 })
 
-exports.removeMemeber = asynchandler (async (req,res,next)=>{
+export const removeMemeberGet = asynchandler (async (req,res,next)=>{
     res.send("Not implemented: Memeber Removal.....")
 })
