@@ -1,13 +1,16 @@
 import mongoose from "mongoose" 
 
-async function dbConnect(db){
+async function connectDb(db){
 	try{
-		await mongoose.connect(db)
-		console.log("The database is connected successfully")
+		const connection = await mongoose.connect(db)
+		
+		console.log("The connection is set successfully")
+		return connection
 	}
 	catch(err){
-		throw new Error(`Connection to ${db} has failed`)
+		throw new Error("connection to Mongodb has failed")
 	}
 }
 
-export default dbConnect
+
+export default connectDb

@@ -1,12 +1,15 @@
 const saveModel = (model)=>{
-	try {
+	try 
+	{
 	return async(data)=>{
 		let modelInstance = new model(data)
+		await modelInstance.save()
+	} 
 	}
-	catch(err){
+	catch (err){
 		throw new Error(`Saving ${model} model has failed`)
 	}
-	}
+	
 }
 
 export default saveModel

@@ -2,6 +2,8 @@
 // th eone chnaing is htis one
 
 import expressAsyncHandler from 'express-async-handler';
+import db from '../config/dbConnect.js'
+
 
 const asynchandler =expressAsyncHandler
 
