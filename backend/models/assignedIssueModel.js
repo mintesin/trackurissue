@@ -10,7 +10,7 @@ this an issue model to be displayed on the team dashboard to be seen by the that
 
 import mongoose from 'mongoose'
 
-const Schema = mongoose.Schema 
+const {Schema} = mongoose.Schema 
 
 const assignedIssueSchema = new Schema({
 	
