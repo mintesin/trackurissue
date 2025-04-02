@@ -1,3 +1,4 @@
-import crIssueModel  from '../models/createdIssueModel.js'
-import dbConnect from '../config/dbConnect.js'
-import saveModel from '../config/saveModel.js'
+import mongoose from 'mongoose'
+import crIssueModel from '../models/createdIssueModel'
+
+
