@@ -10,6 +10,8 @@ This is model for the company which includes
 7. state province
 8. zipcode
 9. country
+10. password
+11. favorite word
 
 
 
@@ -63,6 +65,17 @@ const companySchema = new Schema({
 		required:true, 
 		trim:true
 	},  
+	favoriteWord:{
+			type:String,
+			required:true,
+			trim:true
+	},
+	password: {
+		type:String,
+		required:true,
+		trim:true,
+		minlength:8
+	}
 
 })
 

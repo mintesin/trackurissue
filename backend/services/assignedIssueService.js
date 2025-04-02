@@ -1,18 +1,14 @@
-import assignedIssueModel from '../models/assignedIssueModel.js'
-import connectDb from '../config/dbConnect.js'
-import saveModel from '../config/saveModel.js'
 import mongoose from 'mongoose'
+import assignedIssueModel from '../models/assignedIssueModel.js'
+import  teamModel  from '../models/teamModel.js'
 
-const db = "mongodb://127.0.0.1/newDb"; 
-connectDb(db)
+//1. solve only post send id of 
+//2. get all number of assigned issues only get method takes team idd from front end
+//3. edit allassigned issues both get and post
+//4. 
 
-let sampleIssue={
-    "topic": "Server Downtime",
-    "description": "The server has been down for over 2 hours, causing disruptions to the service. Needs immediate attention.",
-    "assignedAt": "2025-03-18T09:00:00Z",
-    "urgency": "urgent",
-    "team": "60d7bdc1b4f8f084a7b0c6a7"  // This would be the ObjectId of a team document in the "teams" collection
-  }
-  
+
+export const allassignedIssues = async (teamid)
+
 
 

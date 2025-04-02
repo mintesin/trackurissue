@@ -16,6 +16,8 @@ export const registerGet = ()=>{
                 state:'',
                 zipcode:'',
                 country:'',
+                favoriteWord: ' ',
+                password: ' '
         }
         return {...companyDetail}
 }
@@ -43,7 +45,7 @@ export const loginGet = ()=>{
 
 export const loginPost = async (companyCredentials) =>{
         try{
-           const companyFound = await companyModel.findOne({companyCredentials.adminEmail})
+           const companyFound = await companyModel.findOne({adminEmail:companyCredentials.adminEmail})
            if(!companyFound){
                 throw new Error("You are not registered here")
            }
@@ -61,4 +63,32 @@ export const loginPost = async (companyCredentials) =>{
 
 }
 
+export const resetAccountGet = ()=>{
+        let resetDetail = {
+                adminEmail:'',
+                favoriteWord: ' ',
+                new_password: ' ',
 
+
+        }
+        return {... resetDetail}
+}
+export const resetAccountPost = async(resetCredentials)=>
+        {
+        try {
+                const company = await companyModel.findOneAndUpdate({adminEmail: resetCredentials.adminEmail})
+                if(!company)
+                        {
+                        throw new Error("Sorry! This email is not registered at all")
+                }
+                if (company.favoriteWord === resetCredentials.favoriteWord){
+                        company.password = resetCredentials.password
+                        let companyInstance = new companyModel(company)
+                        await companyInstance.save()
+                }
+
+        } catch(err){
+                throw new Error("updating password is impossible" + err.message)
+        }
+
+}
