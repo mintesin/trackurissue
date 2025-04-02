@@ -15,6 +15,4 @@ let sampleIssue={
   }
   
 
-// class assignedIssueHandler{
-//     constructor()
-// }
+
