@@ -76,15 +76,14 @@ export const resetAccountGet = ()=>{
 export const resetAccountPost = async(resetCredentials)=>
         {
         try {
-                const company = await companyModel.findOneAndUpdate({adminEmail: resetCredentials.adminEmail})
+                const company = await companyModel.findOne({adminEmail: resetCredentials.adminEmail})
                 if(!company)
                         {
                         throw new Error("Sorry! This email is not registered at all")
                 }
                 if (company.favoriteWord === resetCredentials.favoriteWord){
                         company.password = resetCredentials.password
-                        let companyInstance = new companyModel(company)
-                        await companyInstance.save()
+                        await company.save()
                 }
 
         } catch(err){

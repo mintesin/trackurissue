@@ -2,14 +2,14 @@ import mongoose from 'mongoose'
 import crIssueModel from '../models/createdIssueModel'
 import teamModel from '../models/teamModel'
 import assignedIssueModel from '../models/assignedIssueModel'
-
+import notFoundError from './genericError'
 
 export const getCreatedIssues = async()=>{
     try{
 
     let allIssues = await crIssueModel.find() 
     if (!allIssues){
-        throw new Error("There is issue created at all") 
+        throw new notFoundError("There is no issue created at all") 
     }
         return allIssues
     } 
