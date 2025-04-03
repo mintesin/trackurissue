@@ -67,7 +67,7 @@ const employeeSchema = new Schema({
 	},
 	authorization: {
 		type: String,
-		enum:["admin","teamleader","teammemebr"],
+		enum:["admin", "teamleader", "teammemebr"],
 		required:true,
 		default:"teammember",
 		trim:true
