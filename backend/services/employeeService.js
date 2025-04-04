@@ -60,3 +60,14 @@ export const employeeResetAccountPost = async(recoveryCredentials)=> {
     }
 }
 
+export const employeeDergisterGet = async (id)=>{
+    try{}
+    catch(err){}
+
+}
+
+export const employeeDergisterPost = async (id)=>{
+    try{}
+    catch(err){}
+}
+

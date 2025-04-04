@@ -59,7 +59,7 @@ export const loginPost = async (companyCredentials) =>{
                 throw new Error("Incorrect password")
            }
            return companyFound
-        }
+        }  
         catch(err) {
                 throw new Error("Login failed: "+ err.message)
 }
