@@ -4,20 +4,6 @@ import teamModel from '../models/teamModel'
 import assignedIssueModel from '../models/assignedIssueModel'
 import notFoundError from './genericError'
 
-export const getCreatedIssues = async()=>{
-    try{
-
-    let allIssues = await crIssueModel.find() 
-    if (!allIssues){
-        throw new notFoundError("There is no issue created at all") 
-    }
-        return allIssues
-    } 
-    catch(err){
-        throw new Error("fetching issue failed: "+ err.message)
-    }
-
-} 
 
 export const createIssueGet = ()=>
 {
