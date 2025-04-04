@@ -1,4 +1,6 @@
 import expressAsyncHandler from 'express-async-handler';
+import * as companyService from '../services/companyService'
+
 
 const asynchandler =expressAsyncHandler
 

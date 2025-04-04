@@ -17,6 +17,12 @@ import mongoose from "mongoose"
 const Schema = mongoose.Schema
 
 const employeeSchema = new Schema({
+	employeeEmail:{
+		type:String,
+		required:true,
+		trim:true
+
+	},
 	firstName: {
 		type: String, 
 		required: true, 
@@ -63,13 +69,14 @@ const employeeSchema = new Schema({
 	password: {
 		type: String,
 		required: true,
-		trim:true
+		trim:true,
+		minlength: 8
 	},
 	authorization: {
 		type: String,
-		enum:["admin","teamleader","teammemebr"],
+		enum:["admin", "teamleader", "employee"],
 		required:true,
-		default:"teammember",
+		default:"employee",
 		trim:true
 	},
 	company:{
