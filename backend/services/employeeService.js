@@ -60,14 +60,33 @@ export const employeeResetAccountPost = async(recoveryCredentials)=> {
     }
 }
 
-export const employeeDergisterGet = async (id)=>{
-    try{}
-    catch(err){}
-
+export const employeeDeregisterGet = async (id) => {
+    try {
+        const employee = await employeeModel.findById(id);
+        if (!employee) {
+            throw new genericError.notFoundError('Employee not found');
+        }
+        return employee;
+    }
+    catch (err) {
+        throw new genericError.NotSuccessFul('Failed to fetch employee: ' + err.message);
+    }
 }
 
-export const employeeDergisterPost = async (id)=>{
-    try{}
-    catch(err){}
+export const employeeDeregisterPost = async (id) => {
+    try {
+        const deletedEmployee = await employeeModel.findByIdAndDelete(id);
+        if (!deletedEmployee) {
+            throw new genericError.notFoundError('Employee not found');
+        }
+        return { message: 'Employee deregistered successfully' };
+    }
+    catch (err) {
+        throw new genericError.NotSuccessFul('Deregistration failed: ' + err.message);
+    }
+}
+
+export const employeeLogout = () => {
+    return { message: 'Logout successful' };
 }
 

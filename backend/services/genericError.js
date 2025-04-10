@@ -31,3 +31,15 @@ export class AuthorizationError extends Error{
         this.name = "AuthorizationError"
     }
 }
+
+export class BadRequestError extends Error{
+    constructor(message){
+        this.name = "BadRequestError"
+    }
+}
+
+export class ConflictError extends error{
+    constructor(message){
+        this.name = "ConflictError"
+    }
+}
