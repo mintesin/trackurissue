@@ -1,19 +1,60 @@
 import mongoose from 'mongoose'
-import employeeModel from '../models/employeeModel'
-import * as genericError from './genericError'
+import employeeModel from '../models/employeeModel.js'
+import teamModel from '../models/teamModel.js'
+import * as genericError from './genericError.js'
 
-//login
-//logout
-//reset password
-//
+export const employeeDashboard = async (employeeId) => {
+    try {
+        const [employee, team] = await Promise.all([
+            employeeModel.findById(employeeId)
+                .select('firstName lastName employeeEmail authorization team')
+                .lean(),
+            teamModel.findOne({members: employeeId})
+                .select('teamName teamAdmin')
+                .lean()
+        ]);
+        
+        if (!employee) {
+            throw new genericError.notFoundError('Employee not found');
+        }
 
-export const employeeLoginGet = ()=>{
-    let employeecredentials ={
-        employeeEmail:'',
-        password:''
+        return {
+            employee,
+            team: team || null
+        };
     }
-    return {... employeecredentials}
-} 
+    catch (err) {
+        throw new genericError.NotSuccessFul('Failed to fetch employee dashboard: ' + err.message);
+    }
+}
+
+export const employeeRegisterGet = () => {
+    const employeeDetail = {
+        firstName: '',
+        lastName: '',
+        employeeEmail: '',
+        streetNumber: '',
+        city: '',
+        state: '',
+        zipcode: '',
+        country: '',
+        favoriteWord: '',
+        password: '',
+        company: ''
+    };
+    return {...employeeDetail};
+}
+
+export const employeeRegisterPost = async (employeeData) => {
+    try {
+        const employeeInstance = new employeeModel(employeeData);
+        await employeeInstance.save();
+        return employeeInstance;
+    }
+    catch (err) {
+        throw new Error('Registration failed: ' + err.message);
+    }
+}
 
 export const employeeLoginPost = async(employeecredentials)=>{
     try{
