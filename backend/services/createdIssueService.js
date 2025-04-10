@@ -1,8 +1,8 @@
 import mongoose from 'mongoose'
-import crIssueModel from '../models/createdIssueModel'
-import teamModel from '../models/teamModel'
-import assignedIssueModel from '../models/assignedIssueModel'
-import notFoundError from './genericError'
+import crIssueModel from '../models/createdIssueModel.js'
+import teamModel from '../models/teamModel.js'
+import assignedIssueModel from '../models/assignedIssueModel.js'
+import * as genericError from './genericError.js'
 
 
 export const createIssueGet = ()=>

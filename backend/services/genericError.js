@@ -15,7 +15,9 @@ export class saveError extends Error {
 }
 
 export class loginFailed extends Error{
+   
     constructor(message){
+        super(message);
         this.name = "loginFailedError"
     }
 }
@@ -38,7 +40,7 @@ export class BadRequestError extends Error{
     }
 }
 
-export class ConflictError extends error{
+export class ConflictError extends Error{
     constructor(message){
         this.name = "ConflictError"
     }
