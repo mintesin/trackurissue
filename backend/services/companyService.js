@@ -7,7 +7,11 @@ import crIssueModel from '../models/createdIssueModel.js'
 import * as  genericError from './genericError.js'
 
 
-export const registerGet = ()=>{
+/**
+ * Gets default company registration form data
+ * @returns {Object} Default company registration form values
+ */
+export const registerGet = () => {
         const companyDetail = {
     
                 companyName:'',
@@ -25,7 +29,13 @@ export const registerGet = ()=>{
         return {...companyDetail}
 }
 
-export const registerPost = async (companyData) =>{
+/**
+ * Registers a new company
+ * @param {Object} companyData - Company registration data
+ * @returns {Promise<Object>} The created company instance
+ * @throws {Error} If registration fails
+ */
+export const registerPost = async (companyData) => {
        
         try{
 
@@ -34,11 +44,15 @@ export const registerPost = async (companyData) =>{
         return companyInstance
         }
         catch(err){
-                throw new Error("Registration failed because of: "+ err.message)
+                throw new genericError.NotSuccessFul("Registration is not successful")
         }
 }
 
-export const loginGet = ()=>{
+/**
+ * Gets default company login form data
+ * @returns {Object} Default company login form values
+ */
+export const loginGet = () => {
         const companyCredentials = {
                 adminEmail:'',
                 password: ' ',
@@ -46,43 +60,59 @@ export const loginGet = ()=>{
         return {...companyCredentials}
 }
 
-export const loginPost = async (companyCredentials) =>{
+/**
+ * Authenticates a company admin
+ * @param {Object} companyCredentials - Login credentials (adminEmail, password)
+ * @returns {Promise<Object>} The authenticated company
+ * @throws {Error} If login fails (invalid email or password)
+ */
+export const loginPost = async (companyCredentials) => {
         try{
            const companyFound = await companyModel.findOne({adminEmail:companyCredentials.adminEmail})
            if(!companyFound){
-                throw new Error("You are not registered here")
+                throw new genericError.notFoundError("You are not registered here")
            }
            //encryption to be added later
            //hashing to be added later
            //session token generation to be done later 
            if(companyFound.password !== companyCredentials.password){
-                throw new Error("Incorrect password")
+                throw new genericError.ConflictError("Incorrect password")
            }
            return companyFound
         }  
         catch(err) {
-                throw new Error("Login failed: "+ err.message)
+                throw new genericError.loginFailed("Login not successful")
 }
 
 }
 
-export const resetAccountGet = ()=>{
+/**
+ * Gets default password reset form data
+ * @returns {Object} Default password reset form values
+ */
+export const resetAccountGet = () => {
         let resetDetail = {
                 adminEmail:'',
                 favoriteWord: ' ',
-                new_password: ' ',
+                newPassword: ' ',
 
 
         }
         return {... resetDetail}
 }
-export const resetAccountPost = async(resetCredentials)=>
+/**
+ * Resets a company admin's password
+ * @param {Object} resetCredentials - Reset credentials (adminEmail, favoriteWord, newPassword)
+ * @returns {Promise<Object>} Reset details
+ * @throws {Error} If password reset fails (invalid email or security word)
+ */
+export const resetAccountPost = async (resetCredentials) =>
         {
         try {
                 const company = await companyModel.findOne({adminEmail: resetCredentials.adminEmail})
                 if(!company)
                         {
-                        throw new Error("Sorry! This email is not registered at all")
+                        throw new genericError.notFoundError("The user is not registered")
                 }
                 if (company.favoriteWord === resetCredentials.favoriteWord){
                         company.password = resetCredentials.password
@@ -90,13 +120,27 @@ export const resetAccountPost = async(resetCredentials)=>
                 }
 
         } catch(err){
-                throw new Error("updating password is impossible" + err.message)
+                throw new genericError.NotSuccessFul("updating password is impossible")
         }
 
 }
 
-//retrieves the company detail, emeployees belonging to the 
-export const companyHome = (companyId)=>{
+/**
+ * Gets comprehensive company dashboard data including:
+ * - Company details
+ * - Employees list
+ * - Teams list
+ * - Created issues
+ * @param {string} companyId - The company ID
+ * @returns {Promise<Object>} Dashboard data object containing:
+ *   - company: Basic company info
+ *   - employees: List of employees
+ *   - teams: List of teams
+ *   - createdIssues: List of created issues
+ * @throws {genericError.notFoundError} If company not found
+ * @throws {genericError.NotSuccessFul} If data fetching fails
+ */
+export const companyHome = (companyId) => {
         try{
               let [companyData, employeesData,teamsData,createdIssuesData] = Promise.all([
                         companyModel.findById(companyId)

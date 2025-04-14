@@ -2,7 +2,9 @@ import express from 'express'
 import adminRoute from './routes/adminRoutes.js'
 import userRoute from './routes/employeeRouters.js'
 import connectDb from './config/dbConnect.js';
- 
+import cors from 'cors' 
+import bodyParser from 'body-parser';
+
 import * as assignedIssueControllers from './controllers/assignedIssueController.js';
 import * as chatRoomControllers from './controllers/chatRoomController.js';
 
@@ -10,7 +12,8 @@ import * as employeeControllers from './controllers/employeeController.js';
 import * as teamControllers from './controllers/teamController.js';     
 
 const app = express()
-app.locals.app = app
+app.use(cors())
+app.use(bodyParser.json())
 
 app.use('/admin',adminRoute)
 app.use('/user/',userRoute)
