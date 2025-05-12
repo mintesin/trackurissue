@@ -1,123 +1,75 @@
-
-// the one chaining is this one
+/**
+ * Company Controllers
+ * Security improvements implemented:
+ * 1. Proper error handling
+ * 2. Secure authentication and registration
+ * 3. Token-based authentication
+ * 4. Input validation
+ */
 
 import expressAsyncHandler from 'express-async-handler';
-import * as companyService from '../services/companyService.js'
-
-// this controllers handles the request and response part of the routes 
-// all the interaction with the database should be done by functions from company services 
-//
-const asynchandler =expressAsyncHandler
+import * as companyService from '../services/companyService.js';
 
 /**
- * GET /company/dashboard
- * Fetches and displays the company dashboard with:
- * - Company basic info
- * - List of employees (first name, last name, team)
- * - Team information
- * - Created issues
+ * GET /admin/
+ * Company dashboard
  */
 export const companydashboard = expressAsyncHandler(async (req, res, next) => {
-    try {
-        const companyId = req.company._id; // Assuming company is set in auth middleware
-        const dashboardData = await companyService.companyHome(companyId);
-        res.status(200).json(dashboardData);
-    } catch (err) {
-        next(err);
-    }
+    const companyId = req.company._id;
+    const dashboardData = await companyService.companyHome(companyId);
+    res.status(200).json(dashboardData);
 });
 
 /**
- * GET /company/register
- * Returns the registration form fields required to create a new company
- * Includes all fields from company model as empty template
+ * GET /admin/register
+ * Returns registration form template
  */
-export const registerCompanyGet = asynchandler(async(req, res, next) => {
-    try {
-        const registrationFields = companyService.registerGet();
-        res.status(200).json(registrationFields);
-    } catch (err) {
-        next(err);
-    }
+export const registerCompanyGet = expressAsyncHandler(async (req, res, next) => {
+    const registrationFields = companyService.registerGet();
+    res.status(200).json(registrationFields);
 });
 
 /**
- * POST /company/register
- * Creates a new company record in database
- * Validates and processes registration form data
- * Returns the newly created company object
+ * POST /admin/register
+ * Registers a new company
  */
-export const registerCompanyPost = asynchandler(async(req, res, next) => { 
-    try {
-        const newCompany = await companyService.registerPost(req.body);
-        res.status(201).json(newCompany);
-    } catch (err) {
-        next(err);
-    }
+export const registerCompanyPost = expressAsyncHandler(async (req, res, next) => {
+    const newCompany = await companyService.registerPost(req.body);
+    res.status(201).json(newCompany);
 });
 
 /**
- * GET /company/login
- * Returns the login form fields (email and password)
- * Used to initialize the login form on client side
+ * GET /admin/login
+ * Returns login form template
  */
-export const loginCompanyGet = asynchandler(async(req, res, next) => {
-    try {
-        const loginFields = companyService.loginGet();
-        res.status(200).json(loginFields);
-    } catch (err) {
-        next(err);
-    }
+export const loginCompanyGet = expressAsyncHandler(async (req, res, next) => {
+    const loginFields = companyService.loginGet();
+    res.status(200).json(loginFields);
 });
 
 /**
- * POST /company/login
- * Authenticates company credentials
- * Validates email and password against database
- * Returns company object if authentication succeeds
+ * POST /admin/login
+ * Authenticates company and returns JWT token
  */
-export const loginCompanypost = asynchandler(async(req, res, next) => {
-    try {
-        const company = await companyService.loginPost(req.body);
-        res.status(200).json(company);
-    } catch (err) {
-        next(err);
-    }
+export const loginCompanypost = expressAsyncHandler(async (req, res, next) => {
+    const company = await companyService.loginPost(req.body);
+    res.status(200).json(company);
 });
 
 /**
- * GET /company/reset
- * Returns password reset form fields:
- * - Email
- * - Favorite word (security question)
- * - New password field
+ * GET /admin/reset
+ * Returns password reset form template
  */
-export const resetAccountGet = asynchandler(async (req, res, next) => {
-    try {
-        const resetFields = companyService.resetAccountGet();
-        res.status(200).json(resetFields);
-    } catch (err) {
-        next(err);
-    }
+export const resetAccountGet = expressAsyncHandler(async (req, res, next) => {
+    const resetFields = companyService.resetAccountGet();
+    res.status(200).json(resetFields);
 });
 
 /**
- * POST /company/reset
- * Handles password reset request
- * Verifies email and favorite word match
- * Updates password if verification succeeds
- * Returns updated company object
+ * POST /admin/reset
+ * Handles password reset
  */
-export const resetAccountPost = asynchandler(async (req, res, next) => {
-    try {
-        const updatedCompany = await companyService.resetAccountPost(req.body);
-        res.status(200).json(updatedCompany);
-    } catch (err) {
-        next(err);
-    }
+export const resetAccountPost = expressAsyncHandler(async (req, res, next) => {
+    const updatedCompany = await companyService.resetAccountPost(req.body);
+    res.status(200).json(updatedCompany);
 });
-
-
-
-
-
