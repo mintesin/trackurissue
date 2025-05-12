@@ -1,49 +1,95 @@
-import express from 'express'
-import * as companyControllers from '../controllers/companyControllers.js'
+/**
+ * Admin Routes Configuration
+ * Security improvements implemented:
+ * 1. Route-specific rate limiting
+ * 2. Authentication middleware
+ * 3. Protected routes
+ * 4. Input validation
+ * 5. Proper route organization
+ */
+
+import express from 'express';
+import * as companyControllers from '../controllers/companyControllers.js';
 import * as teamControllers from '../controllers/teamController.js';   
 import * as createdIssueControllers from '../controllers/createdIssueContoller.js';
 import * as chatRoomControllers from '../controllers/chatRoomController.js';
 import * as employeeControllers from '../controllers/employeeController.js'; 
+import { companyAuth, loginLimiter } from '../middleware/authMiddleware.js';
 
- 
-const router = express.Router()
+const router = express.Router();
 
-// admin company account management 
+/**
+ * Public Routes
+ * These routes don't require authentication
+ * Some have rate limiting for security
+ */
+
+// Company account management - public routes
+router.get('/register', companyControllers.registerCompanyGet);
+router.post('/register', loginLimiter, companyControllers.registerCompanyPost);
+router.get('/login', companyControllers.loginCompanyGet);
+router.post('/login', loginLimiter, companyControllers.loginCompanypost);
+router.get('/reset', companyControllers.resetAccountGet);
+router.post('/reset', loginLimiter, companyControllers.resetAccountPost);
+
+/**
+ * Protected Routes
+ * All routes below this middleware require authentication
+ * companyAuth middleware verifies JWT token and attaches company to req object
+ */
+router.use(companyAuth);
+
+// Company Dashboard
 router.get('/', companyControllers.companydashboard);
-router.get('/register', companyControllers.registerCompanyGet) ///registstration is get method or post method
-router.post('/register',companyControllers.registerCompanyPost)
-router.get('/login' , companyControllers.loginCompanyGet)
-router.post('/login',companyControllers.loginCompanypost)
-router.get('/reset', companyControllers.resetAccountGet) 
-router.post('/reset',companyControllers.resetAccountPost)
 
-//admin team management routes
-router.get('/teamcreate',teamControllers.teamcreationGet)
-router.get('/teamdelete',teamControllers.teamdeletionGet)
-router.get('/addmemeber',teamControllers.addMemeberGet)
-router.get('/removemmeber',teamControllers.removeMemeberGet)
+// Team Management Routes
+router.route('/team')
+    .get(teamControllers.teamcreationGet)
+    .post(teamControllers.teamcreationPost);
 
-//admin issue management routes
-router.get('/createdissues', createdIssueControllers.issuelist)
-router.post('/createissue',createdIssueControllers.issueCreatePost)
-router.get('/deleteissues', createdIssueControllers.issueDeleteGet)
-router.post('/deleteissues', createdIssueControllers.issueDeletePost)
-router.get('/createissue', createdIssueControllers.issueCreateGet)
-router.get('/assignissue', createdIssueControllers.assignIssueGet)
-router.post('/assignissue', createdIssueControllers.assignIssuePost)
-router.get('/editissue', createdIssueControllers.editIssueGet )
-router.get('/editissue', createdIssueControllers.editIssuePost) 
+router.route('/team/:teamId')
+    .delete(teamControllers.teamdeletionGet);
 
-//admin room management routes 
-router.get('/createroom', chatRoomControllers.createRoomGet)
-router.post('/createroom',chatRoomControllers.createRoomPost)
-router.get('/deleteroom', chatRoomControllers.deleteRoomGet)
-router.post('/deleteroom',chatRoomControllers.deleteRoomPost)
+router.route('/team/member')
+    .post(teamControllers.addMemeberGet)
+    .delete(teamControllers.removeMemeberGet);
 
-//admin employee management routes
-router.get('/useregistration',employeeControllers.employeeregisterGet)
-router.post('/useregistration',employeeControllers.employeeregisterPost)
+// Issue Management Routes
+router.route('/issues')
+    .get(createdIssueControllers.issuelist)
+    .post(createdIssueControllers.issueCreatePost);
 
+router.route('/issues/:issueId')
+    .get(createdIssueControllers.issueCreateGet)
+    .put(createdIssueControllers.editIssuePost)
+    .delete(createdIssueControllers.issueDeletePost);
 
+router.route('/issues/assign/:issueId')
+    .get(createdIssueControllers.assignIssueGet)
+    .post(createdIssueControllers.assignIssuePost);
 
-export default router
+// Chat Room Management Routes
+router.route('/room')
+    .get(chatRoomControllers.createRoomGet)
+    .post(chatRoomControllers.createRoomPost);
+
+router.route('/room/:roomId')
+    .delete(chatRoomControllers.deleteRoomGet)
+    .post(chatRoomControllers.deleteRoomPost);
+
+// Employee Management Routes
+router.route('/employee')
+    .get(employeeControllers.employeeregisterGet)
+    .post(employeeControllers.employeeregisterPost);
+
+/**
+ * Error Handler
+ * Catch any errors in the routes and forward to error handler
+ */
+router.use((err, req, res, next) => {
+    // Log error for debugging but don't expose details to client
+    console.error('Admin Route Error:', err);
+    next(err);
+});
+
+export default router;

@@ -1,174 +1,343 @@
-import mongoose from 'mongoose'
-import companyModel from '../models/companyModel.js'
-import teamModel from '../models/teamModel.js'
-import employeeModel from '../models/employeeModel.js'
-import crIssueModel from '../models/createdIssueModel.js'
+/**
+ * Company Service
+ * Security improvements implemented:
+ * 1. Secure password handling
+ * 2. JWT token generation
+ * 3. Safe error handling
+ * 4. Input validation
+ * 5. Secure password reset flow
+ */
 
-import * as  genericError from './genericError.js'
-
+import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import companyModel from '../models/companyModel.js';
+import teamModel from '../models/teamModel.js';
+import employeeModel from '../models/employeeModel.js';
+import crIssueModel from '../models/createdIssueModel.js';
+import * as genericError from './genericError.js';
+import validator from 'validator';
 
 /**
- * Gets default company registration form data
+ * Generate JWT Token
+ * @param {string} id - Company ID
+ * @returns {string} JWT token
+ */
+const generateToken = (id) => {
+    return jwt.sign(
+        { id },
+        process.env.JWT_SECRET || 'test-secret-key',
+        { expiresIn: '24h' }  // Set a default expiration time
+    );
+};
+
+/**
+ * Validate company registration data
+ * @param {Object} data - Company registration data
+ * @throws {Error} If validation fails
+ */
+const validateCompanyData = (data) => {
+    // Sanitize email first
+    if (!data.adminEmail) {
+        throw new genericError.BadRequestError('Invalid email format');
+    }
+    data.adminEmail = data.adminEmail.toLowerCase().trim();
+
+    // Validate email after trimming
+    if (!validator.isEmail(data.adminEmail)) {
+        throw new genericError.BadRequestError('Invalid email format');
+    }
+    
+    // Validate password
+    if (!data.password || data.password.length < 8) {
+        throw new genericError.BadRequestError('Password must be at least 8 characters long');
+    }
+    if (!validator.isStrongPassword(data.password, {
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
+        minSymbols: 1
+    })) {
+        throw new genericError.BadRequestError('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+    }
+
+    // Sanitize other fields
+    if (data.companyName) data.companyName = data.companyName.trim();
+    if (data.adminName) data.adminName = data.adminName.trim();
+    if (data.shortDescription) data.shortDescription = data.shortDescription.trim();
+    if (data.streetNumber) data.streetNumber = data.streetNumber.trim();
+    if (data.city) data.city = data.city.trim();
+    if (data.state) data.state = data.state.trim();
+    if (data.zipcode) data.zipcode = data.zipcode.trim();
+    if (data.country) data.country = data.country.trim();
+    if (data.favoriteWord) data.favoriteWord = data.favoriteWord.trim();
+};
+
+/**
+ * Get registration form template
  * @returns {Object} Default company registration form values
  */
 export const registerGet = () => {
-        const companyDetail = {
-    
-                companyName:'',
-                adminName: '',
-                shortDescription:'',
-                adminEmail:'',
-                streetNumber:'',
-                city:'',
-                state:'',
-                zipcode:'',
-                country:'',
-                favoriteWord: ' ',
-                password: ' '
-        }
-        return {...companyDetail}
-}
+    const companyDetail = {
+        companyName: '',
+        adminName: '',
+        shortDescription: '',
+        adminEmail: '',
+        streetNumber: '',
+        city: '',
+        state: '',
+        zipcode: '',
+        country: '',
+        favoriteWord: '',
+        password: ''
+    };
+    return { ...companyDetail };
+};
 
 /**
- * Registers a new company
+ * Register new company
  * @param {Object} companyData - Company registration data
- * @returns {Promise<Object>} The created company instance
- * @throws {Error} If registration fails
+ * @returns {Promise<Object>} Created company instance and JWT token
  */
 export const registerPost = async (companyData) => {
-       
-        try{
+    try {
+        // Validate input data
+        validateCompanyData(companyData);
 
-        let companyInstance = new companyModel(companyData)
-        await companyInstance.save() 
-        return companyInstance
+        // Check if email already exists
+        const existingCompany = await companyModel.findOne({ adminEmail: companyData.adminEmail });
+        if (existingCompany) {
+            throw new genericError.ConflictError('Email already registered');
         }
-        catch(err){
-                throw new genericError.NotSuccessFul("Registration is not successful")
+
+        // Create new company
+        const company = new companyModel(companyData);
+        await company.save();
+
+        // Generate token
+        const token = generateToken(company._id);
+
+        // Return company data without sensitive information
+        const companyResponse = {
+            token,
+            company: {
+                _id: company._id,
+                companyName: company.companyName,
+                adminName: company.adminName,
+                shortDescription: company.shortDescription,
+                adminEmail: company.adminEmail,
+                streetNumber: company.streetNumber,
+                city: company.city,
+                state: company.state,
+                zipcode: company.zipcode,
+                country: company.country
+            }
+        };
+
+        return companyResponse;
+    } catch (err) {
+        if (err.code === 11000) { // MongoDB duplicate key error
+            throw new genericError.ConflictError('Company already exists');
         }
-}
+        if (err.name === 'BadRequestError') {
+            throw err; // Re-throw validation errors
+        }
+        throw new genericError.BadRequestError(err.message);
+    }
+};
 
 /**
- * Gets default company login form data
- * @returns {Object} Default company login form values
+ * Get login form template
+ * @returns {Object} Default login form values
  */
 export const loginGet = () => {
-        const companyCredentials = {
-                adminEmail:'',
-                password: ' ',
-        }
-        return {...companyCredentials}
-}
+    return {
+        adminEmail: '',
+        password: ''
+    };
+};
 
 /**
- * Authenticates a company admin
- * @param {Object} companyCredentials - Login credentials (adminEmail, password)
- * @returns {Promise<Object>} The authenticated company
- * @throws {Error} If login fails (invalid email or password)
+ * Authenticate company login
+ * @param {Object} credentials - Login credentials
+ * @returns {Promise<Object>} Authenticated company and JWT token
  */
-export const loginPost = async (companyCredentials) => {
-        try{
-           const companyFound = await companyModel.findOne({adminEmail:companyCredentials.adminEmail})
-           if(!companyFound){
-                throw new genericError.notFoundError("You are not registered here")
-           }
-           //encryption to be added later
-           //hashing to be added later
-           //session token generation to be done later 
-           if(companyFound.password !== companyCredentials.password){
-                throw new genericError.ConflictError("Incorrect password")
-           }
-           return companyFound
-        }  
-        catch(err) {
-                throw new genericError.loginFailed("Login not successful")
-}
+export const loginPost = async (credentials) => {
+    try {
+        const { adminEmail, password } = credentials;
 
-}
+        // Check if email and password exist
+        if (!adminEmail || !password) {
+            throw new genericError.BadRequestError('Please provide email and password');
+        }
+
+        // Find company and include password for comparison
+        const company = await companyModel
+            .findOne({ adminEmail })
+            .select('+password');
+
+        if (!company || !(await company.comparePassword(password))) {
+            throw new genericError.UnauthorizedError('Invalid credentials');
+        }
+
+        // Generate token
+        const token = generateToken(company._id);
+
+        // Remove sensitive data
+        const companyResponse = company.toObject();
+        delete companyResponse.password;
+
+        return {
+            token,
+            company: companyResponse
+        };
+    } catch (err) {
+        if (err.name === 'UnauthorizedError' || err.name === 'BadRequestError') {
+            throw err;
+        }
+        throw new genericError.OperationError('Login failed: ' + err.message);
+    }
+};
 
 /**
- * Gets default password reset form data
+ * Get password reset form template
  * @returns {Object} Default password reset form values
  */
 export const resetAccountGet = () => {
-        let resetDetail = {
-                adminEmail:'',
-                favoriteWord: ' ',
-                newPassword: ' ',
-
-
-        }
-        return {... resetDetail}
-}
-/**
- * Resets a company admin's password
- * @param {Object} resetCredentials - Reset credentials (adminEmail, favoriteWord, newPassword)
- * @returns {Promise<Object>} Reset details
- * @throws {Error} If password reset fails (invalid email or security word)
- */
-export const resetAccountPost = async (resetCredentials) =>
-        {
-        try {
-                const company = await companyModel.findOne({adminEmail: resetCredentials.adminEmail})
-                if(!company)
-                        {
-                        throw new genericError.notFoundError("The user is not registered")
-                }
-                if (company.favoriteWord === resetCredentials.favoriteWord){
-                        company.password = resetCredentials.password
-                        await company.save()
-                }
-
-        } catch(err){
-                throw new genericError.NotSuccessFul("updating password is impossible")
-        }
-
-}
+    return {
+        adminEmail: '',
+        favoriteWord: '',
+        newPassword: ''
+    };
+};
 
 /**
- * Gets comprehensive company dashboard data including:
- * - Company details
- * - Employees list
- * - Teams list
- * - Created issues
- * @param {string} companyId - The company ID
- * @returns {Promise<Object>} Dashboard data object containing:
- *   - company: Basic company info
- *   - employees: List of employees
- *   - teams: List of teams
- *   - createdIssues: List of created issues
- * @throws {genericError.notFoundError} If company not found
- * @throws {genericError.NotSuccessFul} If data fetching fails
+ * Reset company password
+ * @param {Object} resetData - Password reset data
+ * @returns {Promise<Object>} Reset confirmation
  */
-export const companyHome = (companyId) => {
-        try{
-              let [companyData, employeesData,teamsData,createdIssuesData] = Promise.all([
-                        companyModel.findById(companyId)
-                                .select("companyName adminName shortDescription adminEmail")
-                                .lean(),
-                        employeeModel.find({company:companyId})
-                                .select("employeeEmail firstName lastName authorization")
-                                .lean(),
-                        teamModel.find({company:companyId})
-                                .select("teamName teamAdmin")
-                                .lean(),                              
-                        crIssueModel.find({company:companyId})
-                                .select("topic description createdAt createdBy urgency status")
-                                .lean()
+export const resetAccountPost = async (resetData) => {
+    try {
+        const { adminEmail, favoriteWord, newPassword } = resetData;
 
-              ])
-        if(!companyData){
-                throw new genericError.notFoundError("The team not found")
-        }   
-              return {
-                company: companyData,
-                employees: employeesData,
-                teams: teamsData,
-                createdIssues: createdIssuesData
+        // Validate new password
+        if (!newPassword || newPassword.length < 8) {
+            throw new genericError.BadRequestError('New password must be at least 8 characters long');
+        }
+        if (!validator.isStrongPassword(newPassword, {
+            minLength: 8,
+            minLowercase: 1,
+            minUppercase: 1,
+            minNumbers: 1,
+            minSymbols: 1
+        })) {
+            throw new genericError.BadRequestError('New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
+        }
 
+        // Find company
+        const company = await companyModel.findOne({ adminEmail });
+        if (!company) {
+            throw new genericError.NotFoundError('No account found with that email');
         }
+
+        // Verify favorite word
+        if (company.favoriteWord !== favoriteWord) {
+            throw new genericError.UnauthorizedError('Invalid security word');
         }
-        catch(err){
-                  throw new genericError.NotSuccessFul("Fetching company data not successful")
+
+        // Update password
+        company.password = newPassword;
+        await company.save();
+
+        return { message: 'Password reset successful' };
+    } catch (err) {
+        if (err.name === 'NotFoundError' || err.name === 'UnauthorizedError') {
+            throw err;
         }
-}
+        throw new genericError.OperationError('Password reset failed: ' + err.message);
+    }
+};
+
+/**
+ * Get company dashboard data
+ * @param {string} companyId - Company ID
+ * @returns {Promise<Object>} Dashboard data
+ */
+/**
+ * Update company details
+ * @param {string} companyId - Company ID
+ * @param {Object} updateData - Data to update
+ * @returns {Promise<Object>} Updated company data
+ */
+export const updateCompany = async (companyId, updateData) => {
+    try {
+        // Validate update data
+        if (updateData.adminEmail && !validator.isEmail(updateData.adminEmail)) {
+            throw new genericError.BadRequestError('Invalid email format');
+        }
+
+        // Find and update company
+        const company = await companyModel.findById(companyId);
+        if (!company) {
+            throw new genericError.NotFoundError('Company not found');
+        }
+
+        // Update allowed fields
+        const allowedUpdates = ['companyName', 'adminName', 'shortDescription', 'adminEmail', 'streetNumber', 'city', 'state', 'zipcode', 'country'];
+        Object.keys(updateData).forEach(update => {
+            if (allowedUpdates.includes(update)) {
+                company[update] = updateData[update];
+            }
+        });
+
+        await company.save();
+
+        // Return updated company without sensitive information
+        const companyResponse = company.toObject();
+        delete companyResponse.password;
+        delete companyResponse.passwordResetToken;
+        delete companyResponse.passwordResetExpires;
+
+        return companyResponse;
+    } catch (err) {
+        if (err.name === 'BadRequestError' || err.name === 'NotFoundError') {
+            throw err;
+        }
+        throw new genericError.OperationError('Update failed: ' + err.message);
+    }
+};
+
+export const companyHome = async (companyId) => {
+    try {
+        const [companyData, employeesData, teamsData, createdIssuesData] = await Promise.all([
+            companyModel.findById(companyId)
+                .select('companyName adminName shortDescription adminEmail')
+                .lean(),
+            employeeModel.find({ company: companyId })
+                .select('employeeEmail firstName lastName authorization')
+                .lean(),
+            teamModel.find({ company: companyId })
+                .select('teamName teamAdmin')
+                .lean(),
+            crIssueModel.find({ company: companyId })
+                .select('topic description createdAt createdBy urgency status')
+                .lean()
+        ]);
+
+        if (!companyData) {
+            throw new genericError.NotFoundError('Company not found');
+        }
+
+        return {
+            company: companyData,
+            employees: employeesData,
+            teams: teamsData,
+            createdIssues: createdIssuesData
+        };
+    } catch (err) {
+        if (err.name === 'NotFoundError') {
+            throw err;
+        }
+        throw new genericError.OperationError('Failed to fetch company data: ' + err.message);
+    }
+};
