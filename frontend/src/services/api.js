@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5000'; // adjust based on your backend URL
+const BASE_URL = 'http://localhost:3000'; // adjust based on your backend URL
 
 // Create axios instance with default config
 const api = axios.create({
@@ -22,51 +22,66 @@ api.interceptors.request.use((config) => {
 // Auth API calls
 export const authAPI = {
   // Company auth
-  companyLogin: (credentials) => api.post('/login', credentials),
-  companyRegister: (data) => api.post('/register', data),
-  companyReset: (email) => api.post('/reset', { email }),
+  companyLogin: (credentials) => api.post('/admin/login', credentials),
+  companyRegister: (data) => api.post('/admin/register', data),
+  companyRegistrationFields: () => api.get('/admin/register'), // Get registration form fields
+  companyReset: (resetData) => api.post('/admin/reset', resetData),
+  companyResetFields: () => api.get('/admin/reset'),
 
   // Employee auth
   employeeLogin: (credentials) => api.post('/employee/login', credentials),
-  employeeReset: (email) => api.post('/employee/reset', { email }),
+  employeeReset: (resetData) => api.post('/employee/reset', resetData),
+  employeeResetFields: () => api.get('/employee/reset'),
 };
 
 // Company/Admin API calls
 export const companyAPI = {
-  getDashboard: () => api.get('/'),
-  createTeam: (teamData) => api.post('/team', teamData),
-  deleteTeam: (teamId) => api.delete(`/team/${teamId}`),
-  addTeamMember: (memberData) => api.post('/team/member', memberData),
-  removeTeamMember: (memberData) => api.delete('/team/member', { data: memberData }),
-  registerEmployee: (employeeData) => api.post('/employee', employeeData),
+  getDashboard: () => api.get('/admin'),
+  getProfile: () => api.get('/admin/profile'),
+  updateProfile: (profileData) => api.put('/admin/profile', profileData),
+  
+  // Team management
+  getTeamCreationForm: () => api.get('/admin/team'),
+  createTeam: (teamData) => api.post('/admin/team', teamData),
+  getTeamDeletionForm: (teamId) => api.get(`/admin/team/${teamId}`),
+  deleteTeam: (teamId) => api.delete(`/admin/team/${teamId}`),
+  
+  // Team member management
+  getAddMemberForm: (teamId) => api.get(`/admin/team/${teamId}/member`),
+  addTeamMember: (teamId, memberData) => api.post(`/admin/team/${teamId}/member`, memberData),
+  getRemoveMemberForm: (teamId, employeeId) => api.get(`/admin/team/${teamId}/member/${employeeId}`),
+  removeTeamMember: (teamId, employeeId) => api.delete(`/admin/team/${teamId}/member/${employeeId}`),
+  
+  // Issue management
+  getIssues: () => api.get('/admin/issues'),
+  createIssue: (issueData) => api.post('/admin/issues', issueData),
+  getIssue: (issueId) => api.get(`/admin/issues/${issueId}`),
+  updateIssue: (issueId, issueData) => api.put(`/admin/issues/${issueId}`, issueData),
+  deleteIssue: (issueId) => api.delete(`/admin/issues/${issueId}`),
+  getAssignIssueForm: (issueId) => api.get(`/admin/issues/assign/${issueId}`),
+  assignIssue: (issueId, assignData) => api.post(`/admin/issues/assign/${issueId}`, assignData),
 };
 
-// Issue API calls
-export const issueAPI = {
-  // For Team Leaders
-  createIssue: (issueData) => api.post('/issues', issueData),
-  getAllIssues: () => api.get('/issues'),
-  getIssue: (issueId) => api.get(`/issues/${issueId}`),
-  updateIssue: (issueId, issueData) => api.put(`/issues/${issueId}`, issueData),
-  deleteIssue: (issueId) => api.delete(`/issues/${issueId}`),
-  assignIssue: (issueId, assignData) => api.post(`/issues/assign/${issueId}`, assignData),
-
-  // For Employees
-  getAssignedIssues: () => api.get('/team/assignedissues'),
-  solveIssue: (issueData) => api.post('/solveissue', issueData),
-};
-
-// Chat API calls
-export const chatAPI = {
-  createRoom: (roomData) => api.post('/room', roomData),
-  deleteRoom: (roomId) => api.delete(`/room/${roomId}`),
-  sendMessage: (message) => api.post('/chat', message),
-  getChatRoom: () => api.get('/chat'),
+// Employee API calls
+export const employeeAPI = {
+  // Profile management
+  getProfile: (employeeId) => api.get(`/employee/profile/${employeeId}`),
+  updateProfile: (employeeId, profileData) => api.put(`/employee/profile/${employeeId}`, profileData),
+  
+  // Chat room management
+  getChatRoom: (roomId) => api.get(`/employee/chat/${roomId}`),
+  sendMessage: (roomId, message) => api.post(`/employee/chat/${roomId}`, { message }),
+  
+  // Issue management
+  getAssignedIssues: () => api.get('/employee/assigned-issues'),
+  getIssueToSolve: (issueId) => api.get(`/employee/assigned-issues/${issueId}/solve`),
+  solveIssue: (issueId, solutionData) => api.post(`/employee/assigned-issues/${issueId}/solve`, solutionData),
 };
 
 // Team API calls
 export const teamAPI = {
-  getTeamDashboard: () => api.get('/team'),
+  getDashboard: (teamId) => api.get(`/employee/team/${teamId}`),
+  getMembers: (teamId) => api.get(`/employee/team/${teamId}/members`),
 };
 
 export default api;

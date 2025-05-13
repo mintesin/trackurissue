@@ -33,10 +33,13 @@ describe('Employee Service Unit Tests', () => {
     describe('registerEmployee', () => {
         it('should create a new employee with hashed password', async () => {
             const testData = generateTestEmployee(testCompany._id);
+            console.log('Test Data:', JSON.stringify(testData, null, 2));
             const result = await employeeService.registerEmployee(testData);
 
             expect(result).toHaveProperty('employee');
             expect(result).toHaveProperty('token');
+            console.log('Test Data firstName:', testData.firstName);
+            console.log('Result firstName:', result.employee.firstName);
             expect(result.employee.firstName).toBe(testData.firstName);
             expect(result.employee.company.toString()).toBe(testCompany._id.toString());
 
@@ -59,7 +62,7 @@ describe('Employee Service Unit Tests', () => {
         });
 
         it('should set correct authorization level', async () => {
-            const testData = generateTestEmployee(testCompany._id, null, {
+            const testData = generateTestEmployee(testCompany._id, {}, {
                 authorization: 'teamleader'
             });
             const result = await employeeService.registerEmployee(testData);
@@ -78,11 +81,11 @@ describe('Employee Service Unit Tests', () => {
 
         it('should login with valid credentials', async () => {
             const loginData = {
-                email: testEmployee.email,
+                employeeEmail: testEmployee.employeeEmail,
                 password: 'TestPassword123!'
             };
 
-            const result = await employeeService.loginEmployee(loginData);
+            const result = await employeeService.employeeLoginPost(loginData);
             expect(result).toHaveProperty('token');
             expect(result).toHaveProperty('employee');
             expect(result.employee._id.toString()).toBe(testEmployee._id.toString());
@@ -90,17 +93,17 @@ describe('Employee Service Unit Tests', () => {
 
         it('should not login with incorrect password', async () => {
             const loginData = {
-                email: testEmployee.email,
+                employeeEmail: testEmployee.employeeEmail,
                 password: 'WrongPassword123!'
             };
 
-            await expect(employeeService.loginEmployee(loginData))
+            await expect(employeeService.employeeLoginPost(loginData))
                 .rejects
                 .toThrow();
         });
     });
 
-    describe('updateEmployee', () => {
+    describe('employeeDashboard', () => {
         let testEmployee;
 
         beforeEach(async () => {
@@ -109,48 +112,23 @@ describe('Employee Service Unit Tests', () => {
             testEmployee = result.employee;
         });
 
-        it('should update employee details', async () => {
-            const updateData = {
-                firstName: 'Updated',
-                lastName: 'Name',
-                city: 'New City'
-            };
-
-            const updatedEmployee = await employeeService.updateEmployee(
-                testEmployee._id,
-                updateData
-            );
-
-            expect(updatedEmployee.firstName).toBe(updateData.firstName);
-            expect(updatedEmployee.lastName).toBe(updateData.lastName);
-            expect(updatedEmployee.city).toBe(updateData.city);
+        it('should get employee dashboard data', async () => {
+            const result = await employeeService.employeeDashboard(testEmployee._id);
+            
+            expect(result).toHaveProperty('employee');
+            expect(result.employee._id.toString()).toBe(testEmployee._id.toString());
+            expect(result).toHaveProperty('team');
         });
 
-        it('should not update with invalid data', async () => {
-            const invalidData = {
-                firstName: '', // empty name should be invalid
-            };
-
-            await expect(employeeService.updateEmployee(testEmployee._id, invalidData))
+        it('should handle non-existent employee', async () => {
+            const nonExistentId = new mongoose.Types.ObjectId();
+            await expect(employeeService.employeeDashboard(nonExistentId))
                 .rejects
-                .toThrow();
-        });
-
-        it('should not update authorization level through normal update', async () => {
-            const updateData = {
-                authorization: 'admin' // should not be allowed to change
-            };
-
-            const updatedEmployee = await employeeService.updateEmployee(
-                testEmployee._id,
-                updateData
-            );
-
-            expect(updatedEmployee.authorization).toBe(testEmployee.authorization);
+                .toThrow('Employee not found');
         });
     });
 
-    describe('resetEmployeePassword', () => {
+    describe('employeeResetAccountPost', () => {
         let testEmployee;
 
         beforeEach(async () => {
@@ -161,17 +139,17 @@ describe('Employee Service Unit Tests', () => {
 
         it('should reset password with correct security word', async () => {
             const resetData = {
-                email: testEmployee.email,
+                employeeEmail: testEmployee.employeeEmail,
                 favoriteWord: 'test', // from generateTestEmployee
-                newPassword: 'NewTestPassword123!'
+                password: 'NewTestPassword123!'
             };
 
-            const result = await employeeService.resetPassword(resetData);
+            const result = await employeeService.employeeResetAccountPost(resetData);
             expect(result).toHaveProperty('message', 'Password reset successful');
 
             // Verify can login with new password
-            const loginResult = await employeeService.loginEmployee({
-                email: testEmployee.email,
+            const loginResult = await employeeService.employeeLoginPost({
+                employeeEmail: testEmployee.employeeEmail,
                 password: 'NewTestPassword123!'
             });
             expect(loginResult).toHaveProperty('token');
@@ -179,12 +157,12 @@ describe('Employee Service Unit Tests', () => {
 
         it('should not reset password with incorrect security word', async () => {
             const resetData = {
-                email: testEmployee.email,
+                employeeEmail: testEmployee.employeeEmail,
                 favoriteWord: 'wrongword',
-                newPassword: 'NewTestPassword123!'
+                password: 'NewTestPassword123!'
             };
 
-            await expect(employeeService.resetPassword(resetData))
+            await expect(employeeService.employeeResetAccountPost(resetData))
                 .rejects
                 .toThrow();
         });
