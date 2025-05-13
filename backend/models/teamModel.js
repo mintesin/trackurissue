@@ -13,16 +13,17 @@ const teamSchema = new Schema({
 		type: String,
 		required:true,
 	},
-	teamAdmin:{
-		type:Schema.Types.ObjectId,
-		ref:"employee",
-		required: true
-	},
 	company:{
 		type:Schema.Types.ObjectId,
 		ref: "company",
 		required: true 
-	}
+	},
+	// In teamModel.js
+	members: [{
+		type: Schema.Types.ObjectId,
+		ref: "employee"
+	}]
+
 	
 }) 
 

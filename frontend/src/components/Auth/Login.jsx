@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
 import { authAPI } from '../../services/api';
@@ -7,10 +7,11 @@ import { authAPI } from '../../services/api';
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    userType: 'employee' // default to employee login
+    userType: 'employee'
   });
 
   const handleChange = (e) => {
@@ -42,12 +43,12 @@ const Login = () => {
           : 'company'
       }));
 
-      // Redirect based on user type
       if (formData.userType === 'company') {
         navigate('/company-dashboard');
       } else {
         navigate('/team-dashboard');
       }
+
     } catch (error) {
       dispatch(loginFailure(error.response?.data?.message || 'Login failed'));
     }

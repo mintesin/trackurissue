@@ -54,23 +54,24 @@ export const generateTestCompany = (overrides = {}) => ({
     ...overrides
 });
 
-export const generateTestEmployee = (companyId, overrides = {}, options = {}) => ({
-    firstName: 'Test',
-    lastName: 'Employee',
-    email: `test.employee${Math.random().toString(36).substring(7)}@company.com`,
-    password: 'TestPassword123!',
-    confirmPassword: 'TestPassword123!',
-    address: '123 Test St',
-    city: 'Test City',
-    state: 'Test State',
-    zipCode: '12345',
-    country: 'Test Country',
-    phoneNumber: '1234567890',
-    company: companyId,
-    authorization: options.authorization || 'employee',
-    favoriteWord: 'test',
-    ...overrides
-});
+export const generateTestEmployee = (companyId, overrides = {}, options = {}) => {
+    const data = {
+        firstName: 'Test',
+        lastName: 'Employee',
+        employeeEmail: `test.employee${Math.random().toString(36).substring(7)}@company.com`,
+        password: 'TestPassword123!',
+        streetNumber: '123',
+        city: 'Test City',
+        state: 'Test State',
+        zipcode: '12345',
+        country: 'Test Country',
+        birthDate: new Date('1990-01-01'),
+        company: companyId,
+        authorization: options.authorization || 'employee',
+        favoriteWord: 'test'
+    };
+    return { ...data, ...overrides };
+};
 
 export const generateTestTeam = (companyId, teamLeaderId, overrides = {}) => ({
     teamName: 'Test Team',

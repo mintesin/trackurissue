@@ -1,11 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { companyAPI, teamAPI } from '../../services/api';
 
+/**
+ * CompanyDashboard Component
+ * 
+ * A dashboard interface for company administrators to manage teams and employees.
+ * Provides functionality for:
+ * - Viewing all teams and their members
+ * - Creating new teams
+ * - Adding new employees
+ * - Removing employees from teams
+ * - Deleting teams
+ */
 const CompanyDashboard = () => {
-  const [teams, setTeams] = useState([]);
-  const [employees, setEmployees] = useState([]);
+  // Main data states
+  const [teams, setTeams] = useState([]); // Stores all teams data
+  const [employees, setEmployees] = useState([]); // Stores all employees data
+  
+  // Modal visibility states
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
+  
+  // Form states
   const [newTeam, setNewTeam] = useState({ name: '', description: '' });
   const [newEmployee, setNewEmployee] = useState({
     name: '',
@@ -14,10 +30,15 @@ const CompanyDashboard = () => {
     isTeamLeader: false
   });
 
+  // Fetch dashboard data on component mount
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
+  /**
+   * Fetches teams and employees data from the API
+   * Updates the local state with the fetched data
+   */
   const fetchDashboardData = async () => {
     try {
       const response = await companyAPI.getDashboard();
@@ -28,6 +49,10 @@ const CompanyDashboard = () => {
     }
   };
 
+  /**
+   * Handles team creation
+   * @param {Event} e - Form submission event
+   */
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     try {
@@ -40,6 +65,10 @@ const CompanyDashboard = () => {
     }
   };
 
+  /**
+   * Handles employee addition to a team
+   * @param {Event} e - Form submission event
+   */
   const handleAddEmployee = async (e) => {
     e.preventDefault();
     try {
@@ -57,6 +86,10 @@ const CompanyDashboard = () => {
     }
   };
 
+  /**
+   * Handles team deletion
+   * @param {string} teamId - ID of the team to delete
+   */
   const handleDeleteTeam = async (teamId) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
       try {
@@ -68,6 +101,11 @@ const CompanyDashboard = () => {
     }
   };
 
+  /**
+   * Handles removing an employee from a team
+   * @param {string} employeeId - ID of the employee to remove
+   * @param {string} teamId - ID of the team from which to remove the employee
+   */
   const handleRemoveEmployee = async (employeeId, teamId) => {
     if (window.confirm('Are you sure you want to remove this employee?')) {
       try {
@@ -99,7 +137,7 @@ const CompanyDashboard = () => {
         </div>
       </div>
 
-      {/* Teams Section */}
+      {/* Teams Section - Displays all teams and their members */}
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Teams</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -136,7 +174,7 @@ const CompanyDashboard = () => {
         </div>
       </div>
 
-      {/* Create Team Modal */}
+      {/* Create Team Modal - Form for creating new teams */}
       {isCreateTeamModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg w-full max-w-md">
@@ -183,7 +221,7 @@ const CompanyDashboard = () => {
         </div>
       )}
 
-      {/* Add Employee Modal */}
+      {/* Add Employee Modal - Form for adding new employees to teams */}
       {isAddEmployeeModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg w-full max-w-md">

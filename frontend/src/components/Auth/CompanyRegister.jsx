@@ -1,19 +1,52 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { loginSuccess } from '../../store/slices/authSlice';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 
 const CompanyRegister = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const [formData, setFormData] = useState({
-    companyName: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
-  const [error, setError] = useState('');
+  const [formSections, setFormSections] = useState([]);
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchFormFields = async () => {
+      try {
+        const response = await authAPI.companyRegistrationFields();
+        setFormSections(response.data.sections);
+        
+        // Initialize form data with empty values from all fields
+        const initialData = {};
+        response.data.sections.forEach(section => {
+          section.fields.forEach(field => {
+            initialData[field.name] = field.value;
+          });
+        });
+        setFormData(initialData);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load registration form');
+        setLoading(false);
+      }
+    };
+    
+    fetchFormFields();
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    
+    try {
+      const { data } = await authAPI.companyRegister(formData);
+      // Store the token
+      localStorage.setItem('token', data.token);
+      // Redirect to dashboard with success message
+      navigate('/dashboard', { state: { registrationSuccess: true } });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -22,119 +55,92 @@ const CompanyRegister = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    try {
-      const response = await authAPI.companyRegister({
-        name: formData.companyName,
-        email: formData.email,
-        password: formData.password
-      });
-
-      dispatch(loginSuccess({
-        user: response.data.user,
-        token: response.data.token,
-        role: 'company'
-      }));
-
-      navigate('/company-dashboard');
-    } catch (error) {
-      setError(error.response?.data?.message || 'Registration failed');
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">Loading registration form...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Register your company
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="companyName" className="sr-only">Company Name</label>
-              <input
-                id="companyName"
-                name="companyName"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Company Name"
-                value={formData.companyName}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Register your Company
+        </h2>
+      </div>
 
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {error && (
-            <div className="text-red-500 text-sm text-center">
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
               {error}
             </div>
           )}
 
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Register
-            </button>
-          </div>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {formSections.map((section) => (
+              <div key={section.sectionName} className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {section.sectionTitle}
+                </h3>
+                <div className={section.sectionName === 'address' ? 'grid grid-cols-2 gap-4' : 'space-y-4'}>
+                  {section.fields.map((field) => (
+                    <div key={field.name} className={
+                      field.name === 'shortDescription' || field.name === 'streetNumber' ? 'col-span-2' : ''
+                    }>
+                      <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+                        {field.label}
+                      </label>
+                      <div className="mt-1">
+                        {field.type === 'textarea' ? (
+                          <textarea
+                            id={field.name}
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={handleChange}
+                            required={field.required}
+                            rows={3}
+                            className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          />
+                        ) : (
+                          <input
+                            id={field.name}
+                            name={field.name}
+                            type={field.type}
+                            value={formData[field.name]}
+                            onChange={handleChange}
+                            required={field.required}
+                            className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          />
+                        )}
+                        {field.description && (
+                          <p className="mt-2 text-sm text-gray-500">{field.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
 
-          <div className="text-sm text-center">
-            <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Already have an account? Sign in
-            </a>
+            <div>
+              <button
+                type="submit"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Register
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-6 text-center">
+            <Link to="/login" className="text-sm text-blue-600 hover:text-blue-500">
+              Already have an account? Log in
+            </Link>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
