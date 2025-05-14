@@ -19,6 +19,48 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    let errorMessage = 'An error occurred. Please try again.';
+    
+    if (error.response) {
+      // Server responded with error
+      switch (error.response.status) {
+        case 400:
+          errorMessage = 'Invalid input. Please check your data and try again.';
+          break;
+        case 401:
+          errorMessage = 'Please login to continue.';
+          break;
+        case 403:
+          errorMessage = 'You do not have permission to perform this action.';
+          break;
+        case 404:
+          errorMessage = 'The requested resource was not found.';
+          break;
+        case 409:
+          errorMessage = 'This resource already exists.';
+          break;
+        case 500:
+          errorMessage = 'Server error. Please try again later.';
+          break;
+        default:
+          errorMessage = error.response.data?.message || errorMessage;
+      }
+    } else if (error.request) {
+      // Request made but no response
+      errorMessage = 'Unable to connect to server. Please check your connection.';
+    }
+
+    return Promise.reject({
+      message: errorMessage,
+      status: error.response?.status
+    });
+  }
+);
+
 // Auth API calls
 export const authAPI = {
   // Company auth
