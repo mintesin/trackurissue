@@ -30,10 +30,17 @@ const Login = () => {
         ? authAPI.employeeLogin 
         : authAPI.companyLogin;
 
-      const response = await loginFunction({
-        email: formData.email,
-        password: formData.password
-      });
+      const response = await loginFunction(
+        formData.userType === 'employee' 
+          ? {
+              email: formData.email,
+              password: formData.password
+            }
+          : {
+              adminEmail: formData.email,
+              password: formData.password
+            }
+      );
 
       dispatch(loginSuccess({
         user: response.data.user,
