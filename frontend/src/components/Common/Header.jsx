@@ -1,17 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { logout, selectIsAuthenticated, selectRole, selectUser } from '../../store/slices/authSlice';
+import { useAuth } from '../../Context/AuthContext';
 
 const Header = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const role = useSelector(selectRole);
-  const user = useSelector(selectUser);
+  const { isAuthenticated, userRole, user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    dispatch(logout());
+    logout();
     navigate('/login');
   };
 
@@ -30,27 +27,21 @@ const Header = () => {
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
                 {/* Company Admin Links */}
-                {role === 'company' && (
+                {userRole === 'company' && (
                   <>
                     <Link
-                      to="/company-dashboard"
+                      to="/admin/dashboard"
                       className="text-white hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium"
                     >
                       Company Dashboard
-                    </Link>
-                    <Link
-                      to="/team-dashboard"
-                      className="text-white hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      Team Dashboard
                     </Link>
                   </>
                 )}
 
                 {/* Employee/Team Leader Links */}
-                {(role === 'employee' || role === 'teamLeader') && (
+                {(userRole === 'employee' || userRole === 'teamLeader') && (
                   <Link
-                    to="/team-dashboard"
+                    to="/employee/dashboard"
                     className="text-white hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium"
                   >
                     Team Dashboard
@@ -64,7 +55,7 @@ const Header = () => {
               {/* User Info */}
               <div className="flex items-center">
                 <span className="text-white mr-4">
-                  {user?.name || user?.email} ({role})
+                  {user?.name || user?.email} ({userRole})
                 </span>
                 <button
                   onClick={handleLogout}
@@ -80,6 +71,7 @@ const Header = () => {
           <div className="md:hidden flex items-center">
             <button
               type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="bg-indigo-600 inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-indigo-500 focus:outline-none"
               aria-controls="mobile-menu"
               aria-expanded="false"
@@ -106,28 +98,20 @@ const Header = () => {
       </nav>
 
       {/* Mobile menu */}
-      <div className="md:hidden hidden" id="mobile-menu">
+      <div className={`md:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {role === 'company' && (
-            <>
-              <Link
-                to="/company-dashboard"
-                className="text-white hover:bg-indigo-500 block px-3 py-2 rounded-md text-base font-medium"
-              >
-                Company Dashboard
-              </Link>
-              <Link
-                to="/team-dashboard"
-                className="text-white hover:bg-indigo-500 block px-3 py-2 rounded-md text-base font-medium"
-              >
-                Team Dashboard
-              </Link>
-            </>
+          {userRole === 'company' && (
+            <Link
+              to="/admin/dashboard"
+              className="text-white hover:bg-indigo-500 block px-3 py-2 rounded-md text-base font-medium"
+            >
+              Company Dashboard
+            </Link>
           )}
 
-          {(role === 'employee' || role === 'teamLeader') && (
+          {(userRole === 'employee' || userRole === 'teamLeader') && (
             <Link
-              to="/team-dashboard"
+              to="/employee/dashboard"
               className="text-white hover:bg-indigo-500 block px-3 py-2 rounded-md text-base font-medium"
             >
               Team Dashboard

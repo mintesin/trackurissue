@@ -8,7 +8,6 @@ const employeeSchema = new Schema({
 		type: String,
 		required: true,
 		trim: true,
-		unique: true,
 		lowercase: true
 	},
 	firstName: {
@@ -53,7 +52,8 @@ const employeeSchema = new Schema({
 	favoriteWord: {
 		type: String,
 		required: true,
-		trim: true
+		trim: true,
+		select: false // Don't include favoriteWord in queries by default
 	},
 	password: {
 		type: String,
@@ -98,30 +98,44 @@ employeeSchema.virtual('fullName').get(function() {
 	return `${this.firstName} ${this.lastName}`
 })
 
-// Hash password before saving
+// Hash password and favoriteWord before saving
 employeeSchema.pre('save', async function(next) {
-	// Only hash the password if it has been modified (or is new)
-	if (!this.isModified('password')) return next()
-
 	try {
-		// Generate salt and hash password
-		const salt = await bcrypt.genSalt(10)
-		this.password = await bcrypt.hash(this.password, salt)
+		// Hash password if modified
+		if (this.isModified('password')) {
+			const salt = await bcrypt.genSalt(10)
+			this.password = await bcrypt.hash(this.password, salt)
 
-		// If this is a password change, update passwordChangedAt
-		if (!this.isNew) {
-			this.passwordChangedAt = Date.now() - 1000 // Subtract 1 second to ensure token is created after password change
+			// If this is a password change, update passwordChangedAt
+			if (!this.isNew) {
+				this.passwordChangedAt = Date.now() - 1000
+			}
 		}
+
+		// Hash favoriteWord if modified
+		if (this.isModified('favoriteWord')) {
+			const salt = await bcrypt.genSalt(10)
+			this.favoriteWord = await bcrypt.hash(this.favoriteWord, salt)
+		}
+
 		next()
 	} catch (error) {
 		next(error)
 	}
 })
 
-// Method to compare password
+// Methods to compare password and favoriteWord
 employeeSchema.methods.comparePassword = async function(candidatePassword) {
 	try {
 		return await bcrypt.compare(candidatePassword, this.password)
+	} catch (error) {
+		throw error
+	}
+}
+
+employeeSchema.methods.compareFavoriteWord = async function(candidateWord) {
+	try {
+		return await bcrypt.compare(candidateWord, this.favoriteWord)
 	} catch (error) {
 		throw error
 	}
@@ -153,6 +167,9 @@ employeeSchema.set('toJSON', {
 })
 
 employeeSchema.set('toObject', { virtuals: true })
+
+// Create compound index for email uniqueness within a company
+employeeSchema.index({ employeeEmail: 1, company: 1 }, { unique: true });
 
 const employeeModel = mongoose.model("employee", employeeSchema)
 

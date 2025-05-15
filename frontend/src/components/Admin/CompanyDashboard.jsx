@@ -1,301 +1,181 @@
 import React, { useState, useEffect } from 'react';
-import { companyAPI, teamAPI } from '../../services/api';
+import { companyAPI } from '../../services/api';
+import MessageDisplay from './components/MessageDisplay';
+import DashboardHeader from './components/DashboardHeader';
+import TeamsGrid from './components/TeamsGrid';
+import EmployeesGrid from './components/EmployeesGrid';
+import CreateTeamModal from './components/CreateTeamModal';
+import AddEmployeeModal from './components/AddEmployeeModal';
+import CreateIssueModal from './components/CreateIssueModal';
 
-/**
- * CompanyDashboard Component
- * 
- * A dashboard interface for company administrators to manage teams and employees.
- * Provides functionality for:
- * - Viewing all teams and their members
- * - Creating new teams
- * - Adding new employees
- * - Removing employees from teams
- * - Deleting teams
- */
 const CompanyDashboard = () => {
   // Main data states
-  const [teams, setTeams] = useState([]); // Stores all teams data
-  const [employees, setEmployees] = useState([]); // Stores all employees data
+  const [teams, setTeams] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   
   // Modal visibility states
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
-  
-  // Form states
-  const [newTeam, setNewTeam] = useState({ name: '', description: '' });
-  const [newEmployee, setNewEmployee] = useState({
-    name: '',
-    email: '',
-    teamId: '',
-    isTeamLeader: false
-  });
+  const [isCreateIssueModalOpen, setIsCreateIssueModalOpen] = useState(false);
+
+
+  // Function to show error message
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => setError(null), 5000);
+  };
+
+  // Function to show success message
+  const showSuccess = (message) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
 
   // Fetch dashboard data on component mount
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-  /**
-   * Fetches teams and employees data from the API
-   * Updates the local state with the fetched data
-   */
   const fetchDashboardData = async () => {
     try {
       const response = await companyAPI.getDashboard();
-      setTeams(response.data.teams);
+      // Transform team data to ensure members have isTeamLeader property for future team dashboard use
+      const transformedTeams = response.data.teams.map(team => ({
+        ...team,
+        members: team.members?.map(member => ({
+          ...member,
+          isTeamLeader: member.authorization === 'teamleader'
+        })) || []
+      }));
+      setTeams(transformedTeams);
       setEmployees(response.data.employees);
+      showSuccess('Dashboard data updated successfully');
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Dashboard fetch error:', error);
+      showError(error.message || 'Error fetching dashboard data');
     }
   };
 
-  /**
-   * Handles team creation
-   * @param {Event} e - Form submission event
-   */
-  const handleCreateTeam = async (e) => {
-    e.preventDefault();
+  const handleCreateTeam = async (newTeam) => {
     try {
       await companyAPI.createTeam(newTeam);
       setIsCreateTeamModalOpen(false);
-      setNewTeam({ name: '', description: '' });
+      showSuccess('Team created successfully');
       fetchDashboardData();
     } catch (error) {
-      console.error('Error creating team:', error);
+      showError(error.message || 'Error creating team');
     }
   };
 
-  /**
-   * Handles employee addition to a team
-   * @param {Event} e - Form submission event
-   */
-  const handleAddEmployee = async (e) => {
-    e.preventDefault();
+  const handleAddEmployee = async (newEmployee) => {
     try {
+      // Validate required fields
+      const requiredFields = ['firstName', 'lastName', 'email', 'teamId', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord'];
+      const missingFields = requiredFields.filter(field => !newEmployee[field]);
+      
+      if (missingFields.length > 0) {
+        showError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        return;
+      }
+
       await companyAPI.registerEmployee(newEmployee);
       setIsAddEmployeeModalOpen(false);
-      setNewEmployee({
-        name: '',
-        email: '',
-        teamId: '',
-        isTeamLeader: false
-      });
+      showSuccess('Employee added successfully');
       fetchDashboardData();
     } catch (error) {
-      console.error('Error adding employee:', error);
+      showError(error.message || 'Error adding employee');
     }
   };
 
-  /**
-   * Handles team deletion
-   * @param {string} teamId - ID of the team to delete
-   */
   const handleDeleteTeam = async (teamId) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
       try {
         await companyAPI.deleteTeam(teamId);
+        showSuccess('Team deleted successfully');
         fetchDashboardData();
       } catch (error) {
-        console.error('Error deleting team:', error);
+        showError(error.message || 'Error deleting team');
       }
     }
   };
 
-  /**
-   * Handles removing an employee from a team
-   * @param {string} employeeId - ID of the employee to remove
-   * @param {string} teamId - ID of the team from which to remove the employee
-   */
-  const handleRemoveEmployee = async (employeeId, teamId) => {
-    if (window.confirm('Are you sure you want to remove this employee?')) {
+  const handleDeregisterEmployee = async (employeeId) => {
+    if (window.confirm('Are you sure you want to deregister this employee? This action cannot be undone.')) {
       try {
-        await companyAPI.removeTeamMember({ employeeId, teamId });
+        await companyAPI.deregisterEmployee(employeeId);
+        showSuccess('Employee deregistered successfully');
         fetchDashboardData();
       } catch (error) {
-        console.error('Error removing employee:', error);
+        showError(error.message || 'Error deregistering employee');
       }
     }
   };
+
+
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Company Dashboard</h1>
-        <div className="space-x-4">
-          <button
-            onClick={() => setIsCreateTeamModalOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Create Team
-          </button>
-          <button
-            onClick={() => setIsAddEmployeeModalOpen(true)}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          >
-            Add Employee
-          </button>
-        </div>
+      <MessageDisplay error={error} successMessage={successMessage} />
+      
+      <DashboardHeader 
+        onCreateTeam={() => {
+          setIsCreateTeamModalOpen(true);
+          setIsAddEmployeeModalOpen(false);
+          setIsCreateIssueModalOpen(false);
+        }}
+        onAddEmployee={() => {
+          setIsAddEmployeeModalOpen(true);
+          setIsCreateTeamModalOpen(false);
+          setIsCreateIssueModalOpen(false);
+        }}
+        onCreateIssue={() => {
+          setIsCreateIssueModalOpen(true);
+          setIsCreateTeamModalOpen(false);
+          setIsAddEmployeeModalOpen(false);
+        }}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <TeamsGrid 
+          teams={teams}
+          onDeleteTeam={handleDeleteTeam}
+        />
+        <EmployeesGrid 
+          employees={employees}
+          onDeregisterEmployee={handleDeregisterEmployee}
+        />
       </div>
 
-      {/* Teams Section - Displays all teams and their members */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Teams</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {teams.map((team) => (
-            <div key={team._id} className="border rounded-lg p-4 shadow">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-lg">{team.name}</h3>
-                <button
-                  onClick={() => handleDeleteTeam(team._id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Delete
-                </button>
-              </div>
-              <p className="text-gray-600 mb-4">{team.description}</p>
-              <div>
-                <h4 className="font-medium mb-2">Team Members:</h4>
-                <ul className="space-y-2">
-                  {team.members?.map((member) => (
-                    <li key={member._id} className="flex justify-between items-center">
-                      <span>{member.name} {member.isTeamLeader && '(Team Leader)'}</span>
-                      <button
-                        onClick={() => handleRemoveEmployee(member._id, team._id)}
-                        className="text-red-500 text-sm hover:text-red-700"
-                      >
-                        Remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <CreateTeamModal 
+        isOpen={isCreateTeamModalOpen}
+        onClose={() => setIsCreateTeamModalOpen(false)}
+        onSubmit={handleCreateTeam}
+      />
 
-      {/* Create Team Modal - Form for creating new teams */}
-      {isCreateTeamModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Create New Team</h2>
-            <form onSubmit={handleCreateTeam}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Team Name</label>
-                  <input
-                    type="text"
-                    value={newTeam.name}
-                    onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    value={newTeam.description}
-                    onChange={(e) => setNewTeam({ ...newTeam, description: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    rows="3"
-                  />
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateTeamModalOpen(false)}
-                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Create Team
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateIssueModal
+        isOpen={isCreateIssueModalOpen}
+        onClose={() => setIsCreateIssueModalOpen(false)}
+        onSubmit={async (newIssue) => {
+          try {
+            // Call backend API to create issue
+            await companyAPI.createIssue(newIssue);
+            setIsCreateIssueModalOpen(false);
+            setSuccessMessage('Issue created successfully');
+            // Refresh dashboard data or issues list if needed
+          } catch (error) {
+            setError(error.message || 'Error creating issue');
+          }
+        }}
+      />
 
-      {/* Add Employee Modal - Form for adding new employees to teams */}
-      {isAddEmployeeModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add New Employee</h2>
-            <form onSubmit={handleAddEmployee}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    value={newEmployee.name}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    value={newEmployee.email}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Team</label>
-                  <select
-                    value={newEmployee.teamId}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, teamId: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select a team</option>
-                    {teams.map((team) => (
-                      <option key={team._id} value={team._id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isTeamLeader"
-                    checked={newEmployee.isTeamLeader}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, isTeamLeader: e.target.checked })}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="isTeamLeader" className="ml-2 block text-sm text-gray-900">
-                    Assign as Team Leader
-                  </label>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAddEmployeeModalOpen(false)}
-                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Add Employee
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddEmployeeModal 
+        isOpen={isAddEmployeeModalOpen}
+        onClose={() => setIsAddEmployeeModalOpen(false)}
+        onSubmit={handleAddEmployee}
+        teams={teams}
+      />
     </div>
   );
 };

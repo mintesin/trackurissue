@@ -5,6 +5,64 @@ import * as genericError from '../services/genericError.js';
 const asynchandler = expressAsyncHandler;
 
 /**
+ * GET /admin/employee/register
+ * Returns the employee registration form fields
+ */
+export const getEmployeeRegistrationFields = asynchandler(async(req, res, next) => {
+    try {
+        const registrationFields = employeeService.getEmployeeRegistrationFields();
+        res.status(200).json(registrationFields);
+    } catch (err) {
+        next(err);
+    }
+});
+
+/**
+ * DELETE /admin/employee/:id
+ * Deregisters/removes an employee from the system
+ */
+export const deregisterEmployee = asynchandler(async(req, res, next) => {
+    try {
+        const employeeId = req.params.id;
+        const companyId = req.company._id; // From auth middleware
+
+        const result = await employeeService.deregisterEmployee(employeeId, companyId);
+        
+        res.status(200).json({
+            status: 'success',
+            message: 'Employee deregistered successfully'
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+/**
+ * POST /admin/employee/register
+ * Registers a new employee
+ */
+export const registerEmployee = asynchandler(async(req, res, next) => {
+    try {
+        const employeeData = {
+            ...req.body,
+            company: req.company._id // Add company ID from auth middleware
+        };
+        const newEmployee = await employeeService.registerEmployee(employeeData);
+        res.status(201).json({
+            status: 'success',
+            message: 'Employee registered successfully',
+            data: {
+                employee: newEmployee
+            }
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+
+
+/**
  * GET /employee/login
  * Returns the login form fields (email and password)
  */

@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
+import { useAuth } from '../../Context/AuthContext';
 import { authAPI } from '../../services/api';
 
 const Login = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -14,16 +17,32 @@ const Login = () => {
     userType: 'employee'
   });
 
+  // Focus email input on mount
+  useEffect(() => {
+    emailInputRef.current?.focus();
+  }, []);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    setError(null); // Clear error when user types
+  };
+
+  const clearForm = () => {
+    setFormData({
+      email: '',
+      password: '',
+      userType: formData.userType // Preserve user type selection
+    });
+    emailInputRef.current?.focus();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(loginStart());
+    setError(null);
+    setLoading(true);
 
     try {
       const loginFunction = formData.userType === 'employee' 
@@ -42,22 +61,44 @@ const Login = () => {
             }
       );
 
-      dispatch(loginSuccess({
-        user: response.data.user,
-        token: response.data.token,
-        role: formData.userType === 'employee' 
-          ? response.data.isTeamLeader ? 'teamLeader' : 'employee'
-          : 'company'
-      }));
-
+      // Handle different response structures for company and employee login
       if (formData.userType === 'company') {
-        navigate('/company-dashboard');
+        const { company, token } = response.data;
+        if (!company || !token) {
+          throw new Error('Invalid response from server');
+        }
+        // For company login, the company data contains the admin info
+        const userData = {
+          _id: company._id,
+          name: company.adminName,
+          email: company.adminEmail,
+          role: 'company'
+        };
+        login(userData, company, token);
+        navigate('/admin/dashboard');
       } else {
-        navigate('/team-dashboard');
+        const { employee, company, token } = response.data;
+        if (!employee || !company || !token) {
+          throw new Error('Invalid response from server');
+        }
+        const userData = {
+          ...employee,
+          role: 'employee'
+        };
+        login(userData, company, token);
+        navigate('/employee/dashboard');
       }
 
     } catch (error) {
-      dispatch(loginFailure(error.response?.data?.message || 'Login failed'));
+      console.error('Login error:', error);
+      setError(
+        error.response?.data?.message || 
+        error.message || 
+        'Login failed. Please check your credentials and try again.'
+      );
+      clearForm();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,14 +110,29 @@ const Login = () => {
             Sign in to your account
           </h2>
         </div>
+
+        {error && (
+          <div className="rounded-md bg-red-50 p-4">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  {error}
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">Email address</label>
               <input
+                ref={emailInputRef}
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
@@ -87,9 +143,11 @@ const Login = () => {
             <div>
               <label htmlFor="password" className="sr-only">Password</label>
               <input
+                ref={passwordInputRef}
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="current-password"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
@@ -133,9 +191,14 @@ const Login = () => {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={loading}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                loading 
+                  ? 'bg-indigo-400 cursor-not-allowed' 
+                  : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+              }`}
             >
-              Sign in
+              {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
 

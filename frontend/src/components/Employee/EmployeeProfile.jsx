@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { employeeAPI } from '../../services/api';
+import { employeeAPI, companyAPI } from '../../services/api';
 
 const EmployeeProfile = ({ employeeId }) => {
     const [profile, setProfile] = useState(null);
@@ -56,15 +56,36 @@ const EmployeeProfile = ({ employeeId }) => {
                         <h2 className="text-2xl font-bold text-gray-800">
                             {profile.firstName} {profile.lastName}
                         </h2>
-                        {/* Only show edit button if viewing own profile */}
-                        {profile._id === employeeId && (
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                            >
-                                Edit Profile
-                            </button>
-                        )}
+                        <div className="flex gap-2">
+                            {/* Show edit button if viewing own profile */}
+                            {profile._id === employeeId && (
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                >
+                                    Edit Profile
+                                </button>
+                            )}
+                            {/* Show deregister button if admin is viewing */}
+                            {profile._id !== employeeId && (
+                                <button
+                                    onClick={async () => {
+                                        if (window.confirm('Are you sure you want to deregister this employee? This action cannot be undone.')) {
+                                            try {
+                                                await companyAPI.deregisterEmployee(profile._id);
+                                                // Redirect to dashboard or show success message
+                                                window.location.href = '/admin/dashboard';
+                                            } catch (err) {
+                                                setError(err.message || 'Failed to deregister employee');
+                                            }
+                                        }
+                                    }}
+                                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                                >
+                                    Deregister Employee
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>

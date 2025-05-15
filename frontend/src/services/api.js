@@ -74,17 +74,40 @@ export const authAPI = {
   employeeLogin: (credentials) => api.post('/employee/login', credentials),
   employeeReset: (resetData) => api.post('/employee/reset', resetData),
   employeeResetFields: () => api.get('/employee/reset'),
+  employeeRegistrationFields: () => api.get('/admin/employee/register'), // Get employee registration form fields
 };
 
 // Company/Admin API calls
 export const companyAPI = {
   getDashboard: () => api.get('/admin'),
-  getProfile: () => api.get('/admin/profile'),
+  getProfile: () => api.get('/admin').then(response => ({ data: response.data.company })),
   updateProfile: (profileData) => api.put('/admin/profile', profileData),
   
   // Team management
   getTeamCreationForm: () => api.get('/admin/team'),
-  createTeam: (teamData) => api.post('/admin/team', teamData),
+  createTeam: (teamData) => {
+    // Ensure required fields are present
+    const { teamName, description } = teamData;
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const currentCompany = JSON.parse(localStorage.getItem('company'));
+
+    if (!currentUser?._id || !currentCompany?._id) {
+      return Promise.reject({
+        message: 'User or company information missing. Please log in again.',
+        status: 400
+      });
+    }
+
+    // Structure the data as expected by backend
+    const formattedData = {
+      teamName,
+      description,
+      teamAdmin: currentUser._id,
+      company: currentCompany._id
+    };
+
+    return api.post('/admin/team', formattedData);
+  },
   getTeamDeletionForm: (teamId) => api.get(`/admin/team/${teamId}`),
   deleteTeam: (teamId) => api.delete(`/admin/team/${teamId}`),
   
@@ -93,10 +116,13 @@ export const companyAPI = {
   addTeamMember: (teamId, memberData) => api.post(`/admin/team/${teamId}/member`, memberData),
   getRemoveMemberForm: (teamId, employeeId) => api.get(`/admin/team/${teamId}/member/${employeeId}`),
   removeTeamMember: (teamId, employeeId) => api.delete(`/admin/team/${teamId}/member/${employeeId}`),
+  registerEmployee: (employeeData) => api.post('/admin/employee/register', employeeData),
+  deregisterEmployee: (employeeId) => api.delete(`/admin/employee/${employeeId}`),
   
   // Issue management
   getIssues: () => api.get('/admin/issues'),
-  createIssue: (issueData) => api.post('/admin/issues', issueData),
+  createIssue: (issueData) => api.post('/admin/issues/create', issueData),
+  getIssueFields: () => api.get('/admin/issues/create'),
   getIssue: (issueId) => api.get(`/admin/issues/${issueId}`),
   updateIssue: (issueId, issueData) => api.put(`/admin/issues/${issueId}`, issueData),
   deleteIssue: (issueId) => api.delete(`/admin/issues/${issueId}`),

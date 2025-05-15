@@ -13,6 +13,7 @@ import * as companyControllers from '../controllers/companyControllers.js';
 import * as teamControllers from '../controllers/teamController.js';   
 import * as createdIssueControllers from '../controllers/createdIssueContoller.js';
 import * as chatRoomControllers from '../controllers/chatRoomController.js';
+import * as employeeController from '../controllers/employeeController.js';
 import { companyAuth, loginLimiter } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -37,6 +38,11 @@ router.post('/reset', loginLimiter, companyControllers.resetAccountPost);
  * companyAuth middleware verifies JWT token and attaches company to req object
  */
 router.use(companyAuth);
+
+// Employee management routes
+router.get('/employee/register', employeeController.getEmployeeRegistrationFields);
+router.post('/employee/register', employeeController.registerEmployee);
+router.delete('/employee/:id', employeeController.deregisterEmployee);
 
 // Company Dashboard
 router.get('/', companyControllers.companydashboard);
@@ -67,6 +73,8 @@ router.route('/team/:teamId/member/:employeeId')
 router.route('/issues')
     .get(createdIssueControllers.issuelist)
     .post(createdIssueControllers.issueCreatePost);
+
+router.get('/issues/create', createdIssueControllers.issueCreateGet);
 
 router.route('/issues/:issueId')
     .get(createdIssueControllers.issueCreateGet)

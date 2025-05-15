@@ -18,11 +18,14 @@ const teamSchema = new Schema({
 		ref: "company",
 		required: true 
 	},
-	// In teamModel.js
 	members: [{
 		type: Schema.Types.ObjectId,
 		ref: "employee"
-	}]
+	}],
+	description: {
+		type: String,
+		default: ''
+	}
 
 	
 }) 
