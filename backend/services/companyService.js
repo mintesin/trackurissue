@@ -26,7 +26,23 @@ export const companyHome = async (companyId) => {
     try {
         const [company, teams, employees, issues] = await Promise.all([
             companyModel.findById(companyId).select('-password -favoriteWord'),
-            teamModel.find({ company: companyId }),
+            teamModel.find({ company: companyId })
+                .select('teamName description members')
+                .populate({
+                    path: 'members',
+                    select: 'firstName lastName authorization',
+                    model: 'employee'
+                })
+                .lean()
+                .then(teams => teams.map(team => ({
+                    ...team,
+                    members: team.members?.map(member => ({
+                        _id: member._id,
+                        firstName: member.firstName,
+                        lastName: member.lastName,
+                        isTeamLeader: member.authorization === 'teamleader'
+                    })) || []
+                }))),
             employeeModel.find({ company: companyId }),
             crIssueModel.find({ company: companyId })
         ]);

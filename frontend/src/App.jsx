@@ -1,8 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import store from './store/store';
-import { useSelector } from 'react-redux';
-import { selectIsAuthenticated, selectRole } from './store/slices/authSlice';
+import { AuthProvider, useAuth } from './Context/AuthContext';
 
 // Layout Components
 import Header from './components/Common/Header';
@@ -19,8 +16,7 @@ import TeamDashboard from './components/Dashboard/TeamDashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const userRole = useSelector(selectRole);
+  const { isAuthenticated, userRole } = useAuth();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -33,55 +29,78 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   return children;
 };
 
+// App Routes Component
+const AppRoutes = () => {
+  const { isAuthenticated, userRole } = useAuth();
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-grow">
+        <Routes>
+          {/* Public Routes */}
+          <Route 
+            path="/login" 
+            element={
+              isAuthenticated ? 
+                <Navigate to={userRole === 'company' ? '/admin/dashboard' : '/employee/dashboard'} replace /> 
+                : <Login />
+            } 
+          />
+          <Route path="/register" element={<CompanyRegister />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* Protected Admin Routes */}
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <Routes>
+                  <Route path="dashboard" element={<CompanyDashboard />} />
+                </Routes>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected Employee Routes */}
+          <Route
+            path="/employee/*"
+            element={
+              <ProtectedRoute allowedRoles={['employee', 'teamLeader']}>
+                <Routes>
+                  <Route path="dashboard" element={<TeamDashboard />} />
+                </Routes>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Default Route */}
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to={isAuthenticated ? 
+                  (userRole === 'company' ? '/admin/dashboard' : '/employee/dashboard')
+                  : '/login'
+                }
+                replace
+              />
+            }
+          />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
 function App() {
   return (
-    <Provider store={store}>
+    <AuthProvider>
       <Router>
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-grow">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<CompanyRegister />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-
-              {/* Protected Company Routes */}
-              <Route
-                path="/company-dashboard/*"
-                element={
-                  <ProtectedRoute allowedRoles={['company']}>
-                    <CompanyDashboard />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Protected Team Routes */}
-              <Route
-                path="/team-dashboard/*"
-                element={
-                  <ProtectedRoute allowedRoles={['company', 'teamLeader', 'employee']}>
-                    <TeamDashboard />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Default Route */}
-              <Route
-                path="/"
-                element={
-                  <Navigate
-                    to="/team-dashboard"
-                    replace
-                  />
-                }
-              />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <AppRoutes />
       </Router>
-    </Provider>
+    </AuthProvider>
   );
 }
 
