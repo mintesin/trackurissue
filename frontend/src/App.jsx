@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Context/AuthContext';
+import IssueDetails from './components/Admin/components/IssueDetails';
+import AssignIssue from './components/Admin/components/AssignIssue';
+import EditIssue from './components/Admin/components/EditIssue';
 
 // Layout Components
 import Header from './components/Common/Header';
@@ -57,6 +60,9 @@ const AppRoutes = () => {
               <ProtectedRoute allowedRoles={['company']}>
                 <Routes>
                   <Route path="dashboard" element={<CompanyDashboard />} />
+                  <Route path="issues/:issueId" element={<IssueDetails />} />
+                  <Route path="issues/:issueId/assign" element={<AssignIssue />} />
+                  <Route path="issues/:issueId/edit" element={<EditIssue />} />
                 </Routes>
               </ProtectedRoute>
             }

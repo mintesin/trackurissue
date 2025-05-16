@@ -74,14 +74,17 @@ router.route('/issues')
     .get(createdIssueControllers.issuelist)
     .post(createdIssueControllers.issueCreatePost);
 
+// Static routes first
 router.get('/issues/create', createdIssueControllers.issueCreateGet);
 
+// Dynamic routes with IDs last
 router.route('/issues/:issueId')
-    .get(createdIssueControllers.issueCreateGet)
+    .get(createdIssueControllers.getIssue)
     .put(createdIssueControllers.editIssuePost)
     .delete(createdIssueControllers.issueDeletePost);
 
-router.route('/issues/assign/:issueId')
+// Assignment route after the main issue routes
+router.route('/issues/:issueId/assign')
     .get(createdIssueControllers.assignIssueGet)
     .post(createdIssueControllers.assignIssuePost);
 

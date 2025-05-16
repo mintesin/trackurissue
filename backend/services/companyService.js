@@ -91,6 +91,7 @@ export const loginGet = () => {
  * @returns {Promise<Object>} Authenticated company with JWT token
  */
 export const loginPost = async (loginData) => {
+
     try {
         const { adminEmail, password } = loginData;
 

@@ -3,7 +3,7 @@ import React from 'react';
 const EmployeesGrid = ({ employees, onDeregisterEmployee }) => {
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-semibold mb-4">Employees</h2>
+      <h2 className="text-2xl font-semibold mb-4 text-white">Employees</h2>
       <div className="w-full bg-gray-900 bg-opacity-90 rounded-xl border border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200 p-6">
         <div className="divide-y divide-gray-700">
           {employees.map((employee) => (

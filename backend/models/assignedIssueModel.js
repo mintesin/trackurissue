@@ -12,7 +12,11 @@ import mongoose from 'mongoose'
 const Schema = mongoose.Schema
 
 const assignedIssueSchema = new Schema({
-	
+	issue: {
+		type: Schema.Types.ObjectId,
+		ref: "createdIssue",
+		required: true
+	},
 	topic: {
 		type:String,
 		required:true,
@@ -32,9 +36,9 @@ const assignedIssueSchema = new Schema({
 	},
 	team:{
 		type: Schema.Types.ObjectId, 
-		ref: "teams",required:true
+		ref: "teams",
+		required:true
 	}
-
 })
 
 assignedIssueSchema.virtual('assigneddate').get(function() {
