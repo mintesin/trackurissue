@@ -64,17 +64,19 @@ api.interceptors.response.use(
 // Auth API calls
 export const authAPI = {
   // Company auth
-  companyLogin: (credentials) => api.post('/admin/login', credentials),
+  companyLogin: (credentials) => {
+    return api.post('/admin/login', credentials);
+  },
   companyRegister: (data) => api.post('/admin/register', data),
-  companyRegistrationFields: () => api.get('/admin/register'), // Get registration form fields
+  companyRegistrationFields: () => api.get('/admin/register'),
   companyReset: (resetData) => api.post('/admin/reset', resetData),
   companyResetFields: () => api.get('/admin/reset'),
 
   // Employee auth
-  employeeLogin: (credentials) => api.post('/employee/login', credentials),
-  employeeReset: (resetData) => api.post('/employee/reset', resetData),
-  employeeResetFields: () => api.get('/employee/reset'),
-  employeeRegistrationFields: () => api.get('/admin/employee/register'), // Get employee registration form fields
+  employeeLogin: (credentials) => api.post('/user/login', credentials),
+  employeeReset: (resetData) => api.post('/user/reset', resetData),
+  employeeResetFields: () => api.get('/user/reset'),
+  employeeRegistrationFields: () => api.get('/admin/employee/register'),
 };
 
 // Company/Admin API calls
@@ -86,7 +88,6 @@ export const companyAPI = {
   // Team management
   getTeamCreationForm: () => api.get('/admin/team'),
   createTeam: (teamData) => {
-    // Ensure required fields are present
     const { teamName, description } = teamData;
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const currentCompany = JSON.parse(localStorage.getItem('company'));
@@ -98,7 +99,6 @@ export const companyAPI = {
       });
     }
 
-    // Structure the data as expected by backend
     const formattedData = {
       teamName,
       description,
@@ -121,35 +121,65 @@ export const companyAPI = {
   
   // Issue management
   getIssues: () => api.get('/admin/issues'),
-  createIssue: (issueData) => api.post('/admin/issues/create', issueData),
+  createIssue: (issueData) => {
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const currentCompany = JSON.parse(localStorage.getItem('company'));
+
+    if (!currentUser?._id || !currentCompany?._id) {
+      return Promise.reject({
+        message: 'User or company information missing. Please log in again.',
+        status: 400
+      });
+    }
+
+    const formattedData = {
+      ...issueData,
+      company: currentCompany._id,
+      createdBy: currentUser._id
+    };
+
+    return api.post('/admin/issues', formattedData);
+  },
   getIssueFields: () => api.get('/admin/issues/create'),
-  getIssue: (issueId) => api.get(`/admin/issues/${issueId}`),
+  getIssue: (issueId) => {
+    if (!issueId) {
+      return Promise.reject({ message: 'Issue ID is required' });
+    }
+    return api.get(`/admin/issues/${issueId}`);
+  },
   updateIssue: (issueId, issueData) => api.put(`/admin/issues/${issueId}`, issueData),
   deleteIssue: (issueId) => api.delete(`/admin/issues/${issueId}`),
-  getAssignIssueForm: (issueId) => api.get(`/admin/issues/assign/${issueId}`),
-  assignIssue: (issueId, assignData) => api.post(`/admin/issues/assign/${issueId}`, assignData),
+  getAssignIssueForm: (issueId) => api.get(`/admin/issues/${issueId}/assign`),
+  assignIssue: (issueId, teamId) => {
+    if (!issueId || !teamId) {
+      return Promise.reject({ message: 'Issue ID and Team ID are required' });
+    }
+    return api.post(`/admin/issues/${issueId}/assign`, {
+      assigneeId: teamId
+    });
+  },
 };
 
 // Employee API calls
 export const employeeAPI = {
   // Profile management
-  getProfile: (employeeId) => api.get(`/employee/profile/${employeeId}`),
-  updateProfile: (employeeId, profileData) => api.put(`/employee/profile/${employeeId}`, profileData),
+  getProfile: (employeeId) => api.get(`/user/profile/${employeeId}`),
+  updateProfile: (employeeId, profileData) => api.put(`/user/profile/${employeeId}`, profileData),
   
   // Chat room management
-  getChatRoom: (roomId) => api.get(`/employee/chat/${roomId}`),
-  sendMessage: (roomId, message) => api.post(`/employee/chat/${roomId}`, { message }),
+  getChatRoom: (roomId) => api.get(`/user/chat/${roomId}`),
+  sendMessage: (roomId, message) => api.post(`/user/chat/${roomId}`, { message }),
   
   // Issue management
-  getAssignedIssues: () => api.get('/employee/assigned-issues'),
-  getIssueToSolve: (issueId) => api.get(`/employee/assigned-issues/${issueId}/solve`),
-  solveIssue: (issueId, solutionData) => api.post(`/employee/assigned-issues/${issueId}/solve`, solutionData),
+  getAssignedIssues: () => api.get('/user/assigned-issues'),
+  getIssueToSolve: (issueId) => api.get(`/user/assigned-issues/${issueId}/solve`),
+  solveIssue: (issueId, solutionData) => api.post(`/user/assigned-issues/${issueId}/solve`, solutionData),
 };
 
 // Team API calls
 export const teamAPI = {
-  getDashboard: (teamId) => api.get(`/employee/team/${teamId}`),
-  getMembers: (teamId) => api.get(`/employee/team/${teamId}/members`),
+  getDashboard: (teamId) => api.get(`/user/team/${teamId}`),
+  getMembers: (teamId) => api.get(`/user/team/${teamId}/members`),
 };
 
 export default api;

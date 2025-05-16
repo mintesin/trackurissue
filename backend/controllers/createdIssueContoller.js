@@ -53,7 +53,11 @@ export const issueCreatePost = asynchandler(async(req, res, next) => {
  */
 export const issueDeleteGet = asynchandler(async(req, res, next) => {
     try {
-        const issueDetails = await createdIssueService.getIssueToDelete(req.params.id);
+        const { issueId } = req.params;
+        if (!issueId) {
+            throw new Error('Issue ID is required');
+        }
+        const issueDetails = await createdIssueService.getIssueToDelete(issueId);
         res.status(200).json(issueDetails);
     } catch (err) {
         next(err);
@@ -67,7 +71,11 @@ export const issueDeleteGet = asynchandler(async(req, res, next) => {
  */
 export const issueDeletePost = asynchandler(async(req, res, next) => {
     try {
-        const result = await createdIssueService.deleteIssue(req.params.id);
+        const { issueId } = req.params;
+        if (!issueId) {
+            throw new Error('Issue ID is required');
+        }
+        const result = await createdIssueService.deleteIssue(issueId);
         res.status(200).json(result);
     } catch (err) {
         next(err);
@@ -81,7 +89,11 @@ export const issueDeletePost = asynchandler(async(req, res, next) => {
  */
 export const editIssueGet = asynchandler(async(req, res, next) => {
     try {
-        const issueData = await createdIssueService.getIssueToEdit(req.params.id);
+        const { issueId } = req.params;
+        if (!issueId) {
+            throw new Error('Issue ID is required');
+        }
+        const issueData = await createdIssueService.getIssueToEdit(issueId);
         res.status(200).json(issueData);
     } catch (err) {
         next(err);
@@ -96,11 +108,41 @@ export const editIssueGet = asynchandler(async(req, res, next) => {
  */
 export const editIssuePost = asynchandler(async(req, res, next) => {
     try {
-        const updatedIssue = await createdIssueService.updateIssue(
-            req.params.id, 
+        const { issueId } = req.params;
+        if (!issueId) {
+            throw new Error('Issue ID is required');
+        }
+        const updatedIssue = await createdIssueService.editedIssuePost(
+            issueId, 
             req.body
         );
         res.status(200).json(updatedIssue);
+    } catch (err) {
+        next(err);
+    }
+});
+
+/**
+ * GET /issues/:id
+ * Returns a single issue by ID
+ * Includes all issue details
+ */
+export const getIssue = asynchandler(async(req, res, next) => {
+    try {
+        const { issueId } = req.params;
+        if (!issueId) {
+            throw new Error('Issue ID is required');
+        }
+        const issue = await createdIssueService.getIssue(issueId);
+        if (!issue) {
+            throw new Error('Issue not found');
+        }
+        res.status(200).json({ 
+            data: {
+                ...issue,
+                assignedTeam: issue.assignedTeam
+            } 
+        });
     } catch (err) {
         next(err);
     }
@@ -113,7 +155,11 @@ export const editIssuePost = asynchandler(async(req, res, next) => {
  */
 export const assignIssueGet = asynchandler(async(req, res, next) => {
     try {
-        const assignData = await createdIssueService.getAssignIssueData(req.params.id);
+        const { issueId } = req.params;
+        if (!issueId) {
+            throw new Error('Issue ID is required');
+        }
+        const assignData = await createdIssueService.getAssignIssueData(issueId);
         res.status(200).json(assignData);
     } catch (err) {
         next(err);
@@ -128,12 +174,25 @@ export const assignIssueGet = asynchandler(async(req, res, next) => {
  */
 export const assignIssuePost = asynchandler(async(req, res, next) => {
     try {
+        const { issueId } = req.params;
+        const { assigneeId } = req.body;
+
+        if (!issueId || !assigneeId) {
+            throw new Error('Issue ID and Team ID are required');
+        }
+
         const assignedIssue = await createdIssueService.assignIssue(
-            req.params.id,
-            req.body.assigneeId,
-            req.body.assigneeType
+            issueId,
+            assigneeId,
+            {
+                assignedAt: new Date().toISOString()
+            }
         );
-        res.status(200).json(assignedIssue);
+
+        res.status(200).json({ 
+            data: assignedIssue,
+            message: 'Issue assigned successfully'
+        });
     } catch (err) {
         next(err);
     }

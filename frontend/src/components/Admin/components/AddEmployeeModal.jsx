@@ -13,14 +13,12 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
         const response = await authAPI.employeeRegistrationFields();
         setFormSections(response.data.sections);
         
-        // Initialize form data with empty values from all fields
         const initialData = {};
         response.data.sections.forEach(section => {
           section.fields.forEach(field => {
             initialData[field.name] = field.value || '';
           });
         });
-        // Add teamId field since it's handled separately
         initialData.teamId = '';
         setFormData(initialData);
         setLoading(false);
@@ -38,23 +36,19 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Get current company from localStorage
     const currentCompany = JSON.parse(localStorage.getItem('company'));
     if (!currentCompany?._id) {
       setError('Company information not found. Please try logging in again.');
       return;
     }
 
-    // Add company ID to form data
     const submitData = {
       ...formData,
       company: currentCompany._id,
-      // Ensure isTeamLeader is included even if false
       isTeamLeader: formData.isTeamLeader || false
     };
 
     onSubmit(submitData);
-    // Reset form
     setFormData({});
     setError(null);
   };
@@ -72,9 +66,9 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-8">
-        <div className="bg-white rounded-lg w-full max-w-md">
+        <div className="bg-gray-800 rounded-lg w-full max-w-md border border-gray-700">
           <div className="px-6 py-4">
-            <p>Loading form fields...</p>
+            <p className="text-gray-300">Loading form fields...</p>
           </div>
         </div>
       </div>
@@ -84,31 +78,31 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="bg-white rounded-lg w-full max-w-md relative max-h-[90vh] flex flex-col">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold">Add New Employee</h2>
+        <div className="bg-gray-800 rounded-lg w-full max-w-md relative max-h-[90vh] flex flex-col border border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-700">
+            <h2 className="text-xl font-bold text-white">Add New Employee</h2>
           </div>
           
           {error && (
-            <div className="px-6 py-4 bg-red-100 border border-red-400 text-red-700">
+            <div className="px-6 py-4 bg-red-900 border border-red-700 text-red-200">
               {error}
             </div>
           )}
 
           <form id="employeeForm" onSubmit={handleSubmit} className="flex flex-col flex-1">
-            <div className="px-6 py-4 overflow-y-auto flex-1 bg-white scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+            <div className="px-6 py-4 overflow-y-auto flex-1 bg-gray-800 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
               <div className="space-y-6">
                 {formSections.map((section) => (
                   <div key={section.sectionName} className="space-y-4">
                     {section.sectionTitle && (
-                      <h3 className="text-lg font-medium text-gray-900">
+                      <h3 className="text-lg font-medium text-white">
                         {section.sectionTitle}
                       </h3>
                     )}
                     <div className="space-y-4">
                       {section.fields.map((field) => (
                         <div key={field.name}>
-                          <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+                          <label htmlFor={field.name} className="block text-sm font-medium text-gray-300">
                             {field.label}
                           </label>
                           <div className="mt-1">
@@ -120,7 +114,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
                                 onChange={handleChange}
                                 required={field.required}
                                 rows={3}
-                                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                className="appearance-none block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                               />
                             ) : field.type === 'checkbox' ? (
                               <input
@@ -129,7 +123,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
                                 name={field.name}
                                 checked={formData[field.name] || false}
                                 onChange={handleChange}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"
                               />
                             ) : (
                               <input
@@ -139,11 +133,11 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
                                 value={formData[field.name] || ''}
                                 onChange={handleChange}
                                 required={field.required}
-                                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                className="appearance-none block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                               />
                             )}
                             {field.description && (
-                              <p className="mt-2 text-sm text-gray-500">{field.description}</p>
+                              <p className="mt-2 text-sm text-gray-400">{field.description}</p>
                             )}
                           </div>
                         </div>
@@ -152,14 +146,14 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
                   </div>
                 ))}
 
-                {/* Team Selection - Always shown at the bottom */}
+                {/* Team Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Team</label>
+                  <label className="block text-sm font-medium text-gray-300">Team</label>
                   <select
                     value={formData.teamId || ''}
                     name="teamId"
                     onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                   >
                     <option value="">Select a team</option>
@@ -177,18 +171,18 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 sticky bottom-0">
+            <div className="px-6 py-4 border-t border-gray-700 bg-gray-800 sticky bottom-0">
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+                  className="bg-gray-700 text-gray-300 px-4 py-2 rounded hover:bg-gray-600 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
                 >
                   Add Employee
                 </button>

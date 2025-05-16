@@ -7,19 +7,21 @@ import EmployeesGrid from './components/EmployeesGrid';
 import CreateTeamModal from './components/CreateTeamModal';
 import AddEmployeeModal from './components/AddEmployeeModal';
 import CreateIssueModal from './components/CreateIssueModal';
+import CreatedIssuesGrid from './components/CreatedIssuesGrid';
 
 const CompanyDashboard = () => {
   // Main data states
   const [teams, setTeams] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [issues, setIssues] = useState([]);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [showTeams, setShowTeams] = useState(true); // Toggle between teams and employees view
   
   // Modal visibility states
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
   const [isCreateIssueModalOpen, setIsCreateIssueModalOpen] = useState(false);
-
 
   // Function to show error message
   const showError = (message) => {
@@ -41,7 +43,6 @@ const CompanyDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const response = await companyAPI.getDashboard();
-      // Transform team data to ensure members have isTeamLeader property for future team dashboard use
       const transformedTeams = response.data.teams.map(team => ({
         ...team,
         members: team.members?.map(member => ({
@@ -51,6 +52,7 @@ const CompanyDashboard = () => {
       }));
       setTeams(transformedTeams);
       setEmployees(response.data.employees);
+      setIssues(response.data.issues);
       showSuccess('Dashboard data updated successfully');
     } catch (error) {
       console.error('Dashboard fetch error:', error);
@@ -71,7 +73,6 @@ const CompanyDashboard = () => {
 
   const handleAddEmployee = async (newEmployee) => {
     try {
-      // Validate required fields
       const requiredFields = ['firstName', 'lastName', 'email', 'teamId', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord'];
       const missingFields = requiredFields.filter(field => !newEmployee[field]);
       
@@ -113,69 +114,96 @@ const CompanyDashboard = () => {
     }
   };
 
-
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <MessageDisplay error={error} successMessage={successMessage} />
-      
-      <DashboardHeader 
-        onCreateTeam={() => {
-          setIsCreateTeamModalOpen(true);
-          setIsAddEmployeeModalOpen(false);
-          setIsCreateIssueModalOpen(false);
-        }}
-        onAddEmployee={() => {
-          setIsAddEmployeeModalOpen(true);
-          setIsCreateTeamModalOpen(false);
-          setIsCreateIssueModalOpen(false);
-        }}
-        onCreateIssue={() => {
-          setIsCreateIssueModalOpen(true);
-          setIsCreateTeamModalOpen(false);
-          setIsAddEmployeeModalOpen(false);
-        }}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <TeamsGrid 
-          teams={teams}
-          onDeleteTeam={handleDeleteTeam}
+    <div className="min-h-screen bg-gray-900">
+      <div className="container mx-auto px-4 py-8">
+        <MessageDisplay error={error} successMessage={successMessage} />
+        
+        <DashboardHeader 
+          onCreateTeam={() => {
+            setIsCreateTeamModalOpen(true);
+            setIsAddEmployeeModalOpen(false);
+            setIsCreateIssueModalOpen(false);
+          }}
+          onAddEmployee={() => {
+            setIsAddEmployeeModalOpen(true);
+            setIsCreateTeamModalOpen(false);
+            setIsCreateIssueModalOpen(false);
+          }}
+          onCreateIssue={() => {
+            setIsCreateIssueModalOpen(true);
+            setIsCreateTeamModalOpen(false);
+            setIsAddEmployeeModalOpen(false);
+          }}
         />
-        <EmployeesGrid 
-          employees={employees}
-          onDeregisterEmployee={handleDeregisterEmployee}
+
+        <div className="flex flex-col md:flex-row gap-8 mt-8">
+          {/* Left Section - Issues */}
+          <div className="md:w-2/3">
+            <CreatedIssuesGrid issues={issues} />
+          </div>
+
+          {/* Right Sidebar - Teams/Employees */}
+          <div className="md:w-1/3">
+            <div className="bg-gray-800 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-4">
+                <button
+                  onClick={() => setShowTeams(true)}
+                  className={`px-4 py-2 rounded ${showTeams ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+                >
+                  Teams
+                </button>
+                <button
+                  onClick={() => setShowTeams(false)}
+                  className={`px-4 py-2 rounded ${!showTeams ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+                >
+                  Employees
+                </button>
+              </div>
+              
+              {showTeams ? (
+                <TeamsGrid 
+                  teams={teams}
+                  onDeleteTeam={handleDeleteTeam}
+                />
+              ) : (
+                <EmployeesGrid 
+                  employees={employees}
+                  onDeregisterEmployee={handleDeregisterEmployee}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        <CreateTeamModal 
+          isOpen={isCreateTeamModalOpen}
+          onClose={() => setIsCreateTeamModalOpen(false)}
+          onSubmit={handleCreateTeam}
+        />
+
+        <CreateIssueModal
+          isOpen={isCreateIssueModalOpen}
+          onClose={() => setIsCreateIssueModalOpen(false)}
+          onSubmit={async (newIssue) => {
+            try {
+              await companyAPI.createIssue(newIssue);
+              setIsCreateIssueModalOpen(false);
+              setSuccessMessage('Issue created successfully');
+              fetchDashboardData();
+            } catch (error) {
+              setError(error.message || 'Error creating issue');
+            }
+          }}
+        />
+
+        <AddEmployeeModal 
+          isOpen={isAddEmployeeModalOpen}
+          onClose={() => setIsAddEmployeeModalOpen(false)}
+          onSubmit={handleAddEmployee}
+          teams={teams}
         />
       </div>
-
-      <CreateTeamModal 
-        isOpen={isCreateTeamModalOpen}
-        onClose={() => setIsCreateTeamModalOpen(false)}
-        onSubmit={handleCreateTeam}
-      />
-
-      <CreateIssueModal
-        isOpen={isCreateIssueModalOpen}
-        onClose={() => setIsCreateIssueModalOpen(false)}
-        onSubmit={async (newIssue) => {
-          try {
-            // Call backend API to create issue
-            await companyAPI.createIssue(newIssue);
-            setIsCreateIssueModalOpen(false);
-            setSuccessMessage('Issue created successfully');
-            // Refresh dashboard data or issues list if needed
-          } catch (error) {
-            setError(error.message || 'Error creating issue');
-          }
-        }}
-      />
-
-      <AddEmployeeModal 
-        isOpen={isAddEmployeeModalOpen}
-        onClose={() => setIsAddEmployeeModalOpen(false)}
-        onSubmit={handleAddEmployee}
-        teams={teams}
-      />
     </div>
   );
 };
