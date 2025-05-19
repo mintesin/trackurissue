@@ -31,9 +31,20 @@ const validateEmployeeData = (data) => {
         }
     };
 
-    Object.entries(validations).forEach(([field, validator]) => {
-        if (data[field]) {
-            const value = validator(data[field]);
+    // Ensure required fields exist
+    if (!data.employeeEmail && !data.email) {
+        throw new genericError.BadRequestError('Email is required');
+    }
+
+    // Map email to employeeEmail if needed
+    if (!data.employeeEmail && data.email) {
+        data.employeeEmail = data.email;
+    }
+
+    // Validate all fields
+    Object.entries(validations).forEach(([field, validatorFn]) => {
+        if (field === 'employeeEmail' || data[field]) {
+            const value = validatorFn(data[field]);
             data[field] = value;
         }
     });
@@ -69,12 +80,15 @@ export const employeeLoginPost = async (employeecredentials) => {
         console.log('Login attempt for:', employeecredentials.employeeEmail);
         validateEmployeeData(employeecredentials);
 
-        const employee = await Employee.findOne({ employeeEmail: employeecredentials.employeeEmail })
-            .select('+password')
-            .populate('company')
-            .populate('team')
-            .populate('teams')
-            .populate('leadingTeams');
+        // Find employee with company context
+        const employee = await Employee.findOne({ 
+            employeeEmail: employeecredentials.employeeEmail 
+        })
+        .select('+password')
+        .populate('company')
+        .populate('team')
+        .populate('teams')
+        .populate('leadingTeams');
 
         if (!employee) {
             console.log('Employee not found');

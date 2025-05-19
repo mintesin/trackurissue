@@ -1,3 +1,25 @@
+/**
+ * @fileoverview Team Dashboard Component
+ * 
+ * This component serves as the main dashboard for team members, providing a comprehensive
+ * view of team activities, assigned issues, and communication features.
+ * 
+ * Features:
+ * - Team information display with leader and member count
+ * - List of team members with their roles
+ * - Assigned issues tracking and management
+ * - Real-time team chat room integration
+ * - Loading states with skeleton screens
+ * - Error handling and retry functionality
+ * - Responsive layout for different screen sizes
+ * 
+ * Technical Details:
+ * - Uses Redux for user state management
+ * - Integrates with WebSocket for real-time chat
+ * - Implements error boundaries for fault tolerance
+ * - Handles asynchronous data loading with proper error states
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { teamAPI, chatAPI } from '../../services/api';

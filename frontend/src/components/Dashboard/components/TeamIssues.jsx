@@ -1,3 +1,34 @@
+/**
+ * @fileoverview Team Issues Component
+ * 
+ * This component displays a list of issues assigned to a team, with visual
+ * indicators for urgency levels and status states. It includes sub-components
+ * for rendering status and urgency badges.
+ * 
+ * Features:
+ * - List of assigned issues with details
+ * - Color-coded urgency badges (high/normal/low)
+ * - Status indicators (pending/inprogress/completed/cancelled)
+ * - Assignee information display
+ * - Assignment date tracking
+ * - Responsive card layout
+ * - Hover effects for better UX
+ * 
+ * Props:
+ * - issues: Array - List of issue objects with properties:
+ *   - _id: String - Unique identifier
+ *   - topic: String - Issue title
+ *   - description: String - Issue details
+ *   - urgency: String - Priority level ('high'/'normal'/'low')
+ *   - status: String - Current state
+ *   - assignee: Object - Assigned team member details
+ *   - assignedAt: Date - Assignment timestamp
+ * 
+ * Sub-components:
+ * - UrgencyBadge: Displays priority level with appropriate styling
+ * - StatusBadge: Shows current status with color coding
+ */
+
 import React from 'react';
 
 const UrgencyBadge = ({ urgency }) => {

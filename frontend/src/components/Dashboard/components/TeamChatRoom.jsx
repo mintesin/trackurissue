@@ -1,9 +1,40 @@
+/**
+ * @fileoverview Team Chat Room Component
+ * 
+ * A real-time chat interface for team communication. This component provides
+ * a full-featured chat experience with WebSocket integration for instant messaging.
+ * 
+ * Features:
+ * - Real-time message updates using WebSocket
+ * - Message history with infinite scroll
+ * - Typing indicators
+ * - Online participant tracking
+ * - Message read status
+ * - Optimistic message updates
+ * - Error handling and retry mechanisms
+ * - Loading states and skeleton screens
+ * 
+ * Props:
+ * - teamId: String - The ID of the team
+ * - chatRoomId: String - The ID of the chat room
+ * - isLoading: Boolean - Loading state indicator
+ * - onParticipantsChange: Function - Callback for participant count updates
+ * 
+ * Technical Details:
+ * - Uses custom WebSocket hook for real-time communication
+ * - Implements infinite scroll for message history
+ * - Handles message persistence through REST API
+ * - Manages complex UI states and error scenarios
+ */
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { chatAPI } from '../../../services/api';
 import useWebSocket from '../../../hooks/useWebSocket';
-import { format } from 'date-fns';
-import { TeamChatRoomSkeleton } from './Skeletons';
+import ChatHeader from './ChatRoom/ChatHeader';
+import MessageList from './ChatRoom/MessageList';
+import ChatInput from './ChatRoom/ChatInput';
+import ChatError from './ChatRoom/ChatError';
 
 const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) => {
   const [messages, setMessages] = useState([]);
@@ -30,14 +61,14 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
   // Fetch initial messages
   useEffect(() => {
     if (chatRoomId) {
-      fetchMessages();
+      fetchMessages(1); // Always fetch first page on mount/chatRoomId change
     }
-  }, [chatRoomId]);
+  }, [chatRoomId]); // Remove fetchMessages from deps to avoid infinite loop
 
-  // Subscribe to WebSocket messages
-  // Watch for participants changes and notify parent
+  // Watch for participants changes
   useEffect(() => {
-    if (onParticipantsChange) {
+    // Only call if both handler and participants exist and participants has changed
+    if (onParticipantsChange && participants && participants.length > 0) {
       onParticipantsChange(participants);
     }
   }, [participants, onParticipantsChange]);
@@ -47,29 +78,15 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
 
     const unsubscribeMessage = subscribe('message', (data) => {
       if (data.roomId === chatRoomId) {
-        console.log('Received new message:', data.message);
-        // Immediately update messages state with new message
         setMessages(prev => {
-          // Check if message already exists to prevent duplicates
           const exists = prev.some(msg => msg._id === data.message._id);
           if (!exists) {
-            // Add new message and ensure proper sorting
-            const newMessages = [...prev, data.message].sort((a, b) => 
+            return [...prev, data.message].sort((a, b) => 
               new Date(a.timestamp) - new Date(b.timestamp)
             );
-            
-            // Scroll to bottom after state update
-            setTimeout(() => {
-              if (messagesEndRef.current) {
-                messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-              }
-            }, 0);
-            
-            return newMessages;
           }
           return prev;
         });
-        // Mark messages as read
         chatAPI.markAsRead(chatRoomId).catch(console.error);
       }
     });
@@ -79,16 +96,20 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
         setTypingUsers(prev => {
           const newSet = new Set(prev);
           newSet.add(data.userId);
-          // Remove typing indicator after 3 seconds
-          setTimeout(() => {
-            setTypingUsers(current => {
-              const updated = new Set(current);
-              updated.delete(data.userId);
-              return updated;
-            });
-          }, 3000);
           return newSet;
         });
+
+        // Clear typing indicator after delay
+        const timeoutId = setTimeout(() => {
+          setTypingUsers(current => {
+            const updated = new Set(current);
+            updated.delete(data.userId);
+            return updated;
+          });
+        }, 3000);
+
+        // Cleanup timeout on next typing event or unmount
+        return () => clearTimeout(timeoutId);
       }
     });
 
@@ -98,14 +119,22 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
     };
   }, [chatRoomId, subscribe, user?._id]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages, but only if we're near the bottom already
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    // Use RAF to ensure DOM has updated
+    requestAnimationFrame(() => {
+      if (!chatContainerRef.current || !messagesEndRef.current) return;
+      
+      const container = chatContainerRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      
+      if (isNearBottom) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
   }, [messages]);
 
-  const fetchMessages = async (pageNum = 1) => {
+  const fetchMessages = useCallback(async (pageNum = 1) => {
     if (!chatRoomId) return;
 
     try {
@@ -121,8 +150,6 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
       setHasMore(response.data.hasMore);
       setPage(pageNum);
       setError(null);
-
-      // Mark messages as read after loading
       await chatAPI.markAsRead(chatRoomId);
     } catch (err) {
       console.error('Get messages error:', err);
@@ -130,14 +157,14 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
     } finally {
       setLoading(false);
     }
-  };
+  }, [chatRoomId]);
 
   const handleScroll = useCallback(() => {
     const { scrollTop } = chatContainerRef.current;
     if (scrollTop === 0 && hasMore && !loading) {
       fetchMessages(page + 1);
     }
-  }, [hasMore, loading, page]);
+  }, [hasMore, loading, page, fetchMessages]);
 
   const handleTyping = useCallback(() => {
     if (typingTimeoutRef.current) {
@@ -169,17 +196,8 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
         timestamp: new Date().toISOString()
       };
       
-      // Add temporary message and scroll to bottom
-      setMessages(prev => {
-        const newMessages = [...prev, tempMessage];
-        // Scroll to bottom after state update
-        setTimeout(() => {
-          if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 0);
-        return newMessages;
-      });
+      // Add temporary message
+      setMessages(prev => [...prev, tempMessage]);
       
       // Send via WebSocket for real-time update
       const sent = sendWsMessage(messageContent);
@@ -192,17 +210,13 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
       setError(null);
     } catch (err) {
       setError(err.message || 'Failed to send message');
-      // Optionally: Remove the temporary message if sending failed
+      // Remove the temporary message if sending failed
       setMessages(prev => prev.filter(msg => !msg._id.startsWith('temp-')));
     }
   };
 
-  const formatMessageTime = (timestamp) => {
-    return format(new Date(timestamp), 'HH:mm');
-  };
-
   if (isLoading) {
-    return <TeamChatRoomSkeleton />;
+    return null; // Loading handled by parent
   }
 
   if (!chatRoomId) {
@@ -214,98 +228,34 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
   }
 
   if (error || wsError) {
-    return (
-      <div className="h-[400px] flex items-center justify-center bg-gray-700 rounded-lg">
-        <p className="text-red-500">{error || wsError}</p>
-      </div>
-    );
+    return <ChatError error={error || wsError} />;
   }
 
   return (
     <div className="h-[400px] flex flex-col">
-      <div className="bg-gray-800 px-4 py-2 rounded-t-lg flex items-center justify-between">
-        <div className="text-white">
-          {participants.size} {participants.size === 1 ? 'participant' : 'participants'} online
-        </div>
-        <div className="text-sm text-gray-400">
-          {isConnected ? 'Connected' : 'Connecting...'}
-        </div>
-      </div>
-      <div 
+      <ChatHeader participants={participants} isConnected={isConnected} />
+      <MessageList 
+        messages={messages} 
+        userId={user?._id} 
+        loading={loading} 
+        page={page} 
+        hasMore={hasMore} 
+        onScroll={handleScroll} 
+        typingUsers={typingUsers}
         ref={chatContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 bg-gray-700 p-4 overflow-y-auto space-y-4"
-      >
-        {loading && page === 1 ? (
-          <div className="text-gray-300 text-center">Loading messages...</div>
-        ) : messages.length === 0 ? (
-          <div className="text-gray-300 text-center">No messages yet</div>
-        ) : (
-          <>
-            {loading && page > 1 && (
-              <div className="text-gray-300 text-center">Loading more messages...</div>
-            )}
-            {messages.map((msg, index) => (
-              <div
-                key={msg._id || index}
-                className={`flex flex-col ${
-                  msg.sender._id === user?._id ? 'items-end' : 'items-start'
-                }`}
-              >
-                <div className="flex items-baseline space-x-2">
-                  <span className={`font-medium ${
-                    msg.sender._id === user?._id ? 'text-blue-400' : 'text-green-400'
-                  }`}>
-                    {msg.sender._id === user?._id ? 'You' : `${msg.sender.firstName} ${msg.sender.lastName}`}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {formatMessageTime(msg.timestamp)}
-                  </span>
-                </div>
-                <div className={`mt-1 px-4 py-2 rounded-lg max-w-[80%] ${
-                  msg.sender._id === user?._id 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-600 text-white'
-                }`}>
-                  {msg.content}
-                </div>
-              </div>
-            ))}
-            {typingUsers.size > 0 && (
-              <div className="text-gray-400 text-sm italic">
-                Someone is typing...
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </>
-        )}
-      </div>
-      <form onSubmit={handleSendMessage} className="bg-gray-800 p-4 rounded-b-lg">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => {
-              setMessage(e.target.value);
-              handleTyping();
-            }}
-            placeholder={isConnected ? "Type your message..." : "Connecting..."}
-            disabled={!isConnected || !chatRoomId}
-            className="flex-1 bg-gray-700 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={!message.trim() || !isConnected || loading || !chatRoomId}
-            className={`px-4 py-2 rounded transition-colors ${
-              !message.trim() || !isConnected || loading || !chatRoomId
-                ? 'bg-gray-600 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-            } text-white`}
-          >
-            Send
-          </button>
-        </div>
-      </form>
+      />
+      <ChatInput 
+        message={message} 
+        onMessageChange={(value) => {
+          setMessage(value);
+          handleTyping();
+        }}
+        onSubmit={handleSendMessage} 
+        isConnected={isConnected} 
+        loading={loading} 
+        disabled={!chatRoomId} 
+      />
+      <div ref={messagesEndRef} />
     </div>
   );
 };

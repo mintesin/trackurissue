@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Footer = () => {
+  const navigate = useNavigate();
   return (
     <footer className="bg-gray-800 text-white">
       <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
@@ -14,7 +16,7 @@ const Footer = () => {
               className="text-gray-300 hover:text-white text-sm"
               onClick={(e) => {
                 e.preventDefault();
-                // Add help/documentation functionality here
+                navigate('/documentation');
               }}
             >
               Help & Documentation

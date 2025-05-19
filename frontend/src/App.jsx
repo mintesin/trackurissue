@@ -1,3 +1,17 @@
+/**
+ * @fileoverview Main Application Component
+ * 
+ * This is the root component of the application that handles routing and authentication.
+ * It sets up protected routes for different user roles (company admin, employee, team leader)
+ * and manages the overall layout structure with navigation and footer components.
+ * 
+ * Features:
+ * - Role-based route protection
+ * - Authentication state management
+ * - Centralized routing configuration
+ * - Responsive layout structure
+ */
+
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import IssueDetails from './components/Admin/components/IssueDetails';
@@ -14,6 +28,7 @@ import Footer from './components/Common/Footer';
 import Login from './components/Auth/Login';
 import CompanyRegister from './components/Auth/CompanyRegister';
 import ResetPassword from './components/Auth/ResetPassword';
+import Documentation from './components/Common/Documentation';
 
 // Dashboard Components
 import CompanyDashboard from './components/Admin/CompanyDashboard';
@@ -23,10 +38,31 @@ import TeamDashboard from './components/Dashboard/TeamDashboard';
 const ProfileWrapper = () => {
   const { id } = useParams();
   const userRole = useSelector(state => state.auth.role);
+  const currentUser = useSelector(state => state.auth.user);
   
+  console.log('ProfileWrapper - params:', { id, userRole, currentUser });
+  
+  if (!id) {
+    return <Navigate to="/login" replace />;
+  }
+
   if (userRole === 'company') {
     return <CompanyProfile companyId={id} />;
   }
+
+  // For employee profiles, ensure the ID is valid
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="bg-red-900 text-red-200 p-4 rounded-lg">
+            Invalid profile ID
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return <EmployeeProfile employeeId={id} />;
 };
 
@@ -67,6 +103,7 @@ const AppRoutes = () => {
           />
           <Route path="/register" element={<CompanyRegister />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/documentation" element={<Documentation />} />
 
           {/* Protected Admin Routes */}
           <Route

@@ -1,3 +1,27 @@
+/**
+ * @fileoverview Team Members Component
+ * 
+ * This component displays a grid of team members with their roles and status.
+ * It provides visual distinction between team leaders and regular members.
+ * 
+ * Features:
+ * - Grid layout with responsive design
+ * - Visual indicators for team leaders (blue ring and background)
+ * - Role badges (Team Leader, Admin)
+ * - Member avatars with initials
+ * - Empty state handling
+ * - Automatic sorting (team leaders first)
+ * 
+ * Props:
+ * - members: Array - List of team members with their details
+ *   - _id: String - Unique identifier
+ *   - firstName: String - First name
+ *   - lastName: String - Last name
+ *   - email: String - Email address
+ *   - isTeamLeader: Boolean - Leadership status
+ *   - authorization: String - Role (e.g., 'admin')
+ */
+
 import React from 'react';
 
 const TeamMembers = ({ members = [] }) => {

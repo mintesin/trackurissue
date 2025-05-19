@@ -1,3 +1,21 @@
+/**
+ * @fileoverview Company Profile Component
+ * 
+ * This component handles the display and management of company profiles.
+ * It provides functionality for viewing and editing company information,
+ * accessible to company administrators.
+ * 
+ * Features:
+ * - View company profile details including admin info
+ * - Edit company information
+ * - Form validation and error handling
+ * - Responsive layout with Tailwind CSS
+ * - Real-time form updates with optimistic UI
+ * 
+ * Props:
+ * - companyId: String - The ID of the company whose profile is being viewed
+ */
+
 import React, { useState, useEffect } from 'react';
 import { companyAPI } from '../../../services/api';
 

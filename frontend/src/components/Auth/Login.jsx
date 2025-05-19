@@ -87,15 +87,17 @@ const Login = () => {
         if (!employee || !token) {
           throw new Error('Invalid response from server');
         }
+        // Map backend authorization to frontend role
+        const role = employee.authorization === 'teamleader' ? 'teamLeader' : 'employee';
         const userData = {
           ...employee,
-          role: 'employee',
+          role,
           team: team?._id
         };
         // Store user and company data in localStorage for employees too
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('company', JSON.stringify(company));
-        dispatch(loginSuccess({ user: userData, token, role: 'employee' }));
+        dispatch(loginSuccess({ user: userData, token, role }));
         navigate('/employee/dashboard');
       }
 
