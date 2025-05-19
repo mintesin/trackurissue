@@ -1,3 +1,29 @@
+/**
+ * @fileoverview Team Header Component
+ * 
+ * This component displays the team header section with key team information
+ * and controls. It provides a summary view of team status and leadership.
+ * 
+ * Features:
+ * - Team name display
+ * - Team leader information with support for multiple leaders
+ * - Member count display
+ * - Visual indicators for missing leaders or empty teams
+ * - Responsive layout (mobile/desktop)
+ * - Team settings access button
+ * - SVG icons for visual enhancement
+ * 
+ * Props:
+ * - teamName: String - Name of the team
+ * - teamLead: String - Name of team leader(s), may include '+N' suffix for multiple leaders
+ * - memberCount: Number - Total number of team members
+ * 
+ * Technical Details:
+ * - Handles multiple team leaders display with tooltip
+ * - Responsive design using Tailwind CSS
+ * - Conditional styling for warning states
+ */
+
 import React from 'react';
 
 const TeamHeader = ({ teamName, teamLead, memberCount }) => {

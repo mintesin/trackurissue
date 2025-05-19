@@ -31,7 +31,7 @@ export const companyHome = async (companyId) => {
                 .populate({
                     path: 'members',
                     select: 'firstName lastName authorization',
-                    model: 'Employee'  // Changed from 'employee' to 'Employee'
+                    model: 'Employee'
                 })
                 .lean()
                 .then(teams => teams.map(team => ({
@@ -48,7 +48,7 @@ export const companyHome = async (companyId) => {
         ]);
 
         if (!company) {
-            throw new genericError.NotFoundError('Company not found');  // Fixed casing of NotFoundError
+            throw new genericError.NotFoundError('Company not found');
         }
 
         return {
@@ -58,7 +58,65 @@ export const companyHome = async (companyId) => {
             issues
         };
     } catch (error) {
-        console.error('Error in companyHome:', error);  // Added error logging
+        console.error('Error in companyHome:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get company profile
+ * @param {string} companyId - Company ID
+ * @returns {Promise<Object>} Company profile data
+ */
+export const getProfile = async (companyId) => {
+    try {
+        const company = await companyModel.findById(companyId)
+            .select('-password -favoriteWord');
+
+        if (!company) {
+            throw new genericError.NotFoundError('Company not found');
+        }
+
+        return company;
+    } catch (error) {
+        console.error('Error in getProfile:', error);
+        throw error;
+    }
+};
+
+/**
+ * Update company profile
+ * @param {string} companyId - Company ID
+ * @param {Object} updateData - Data to update
+ * @returns {Promise<Object>} Updated company profile
+ */
+export const updateProfile = async (companyId, updateData) => {
+    try {
+        // Only allow updating specific fields
+        const allowedUpdates = ['companyName', 'adminName', 'adminEmail', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'shortDescription'];
+        const updates = Object.keys(updateData)
+            .filter(key => allowedUpdates.includes(key))
+            .reduce((obj, key) => {
+                obj[key] = updateData[key];
+                return obj;
+            }, {});
+
+        const company = await companyModel.findByIdAndUpdate(
+            companyId,
+            { $set: updates },
+            { new: true, runValidators: true }
+        ).select('-password -favoriteWord');
+
+        if (!company) {
+            throw new genericError.NotFoundError('Company not found');
+        }
+
+        return company;
+    } catch (error) {
+        console.error('Error in updateProfile:', error);
+        if (error.name === 'ValidationError') {
+            throw new genericError.BadRequestError(error.message);
+        }
         throw error;
     }
 };

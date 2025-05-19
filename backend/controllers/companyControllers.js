@@ -81,8 +81,8 @@ export const resetAccountPost = expressAsyncHandler(async (req, res, next) => {
  * Get company profile
  */
 export const getProfile = expressAsyncHandler(async (req, res, next) => {
-    const dashboardData = await companyService.companyHome(req.company._id);
-    res.status(200).json(dashboardData.company);
+    const profile = await companyService.getProfile(req.company._id);
+    res.status(200).json(profile);
 });
 
 /**
@@ -90,25 +90,6 @@ export const getProfile = expressAsyncHandler(async (req, res, next) => {
  * Update company profile
  */
 export const updateProfile = expressAsyncHandler(async (req, res, next) => {
-    // Only allow updating specific fields
-    const allowedUpdates = ['companyName', 'adminName', 'adminEmail', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'shortDescription'];
-    const updates = Object.keys(req.body)
-        .filter(key => allowedUpdates.includes(key))
-        .reduce((obj, key) => {
-            obj[key] = req.body[key];
-            return obj;
-        }, {});
-
-    // Update company using findByIdAndUpdate
-    const company = await companyModel.findByIdAndUpdate(
-        req.company._id,
-        { $set: updates },
-        { new: true, runValidators: true }
-    ).select('-password -favoriteWord');
-
-    if (!company) {
-        throw new genericError.NotFoundError('Company not found');
-    }
-
-    res.status(200).json(company);
+    const updatedCompany = await companyService.updateProfile(req.company._id, req.body);
+    res.status(200).json(updatedCompany);
 });

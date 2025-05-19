@@ -83,7 +83,7 @@ const bootstrap = async () => {
         console.log("Models initialized successfully");
 
         // Create and start server
-        const PORT = process.env.PORT || 3000;
+        const PORT = process.env.PORT || 3001;
         const server = createServer(app);
         await startServer(server, PORT);
 

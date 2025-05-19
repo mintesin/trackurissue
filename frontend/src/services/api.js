@@ -32,12 +32,18 @@ api.interceptors.response.use(
           errorMessage = error.response.data?.message || 'Invalid input. Please check your data and try again.';
           break;
         case 401:
-          // Clear local storage and reload page on session expiry
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('company');
-          errorMessage = 'Session expired. Please login again.';
-          window.location.href = '/';
+          const token = localStorage.getItem('token');
+          if (token) {
+            // Only redirect on session expiry if there was an existing token
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('company');
+            errorMessage = 'Session expired. Please login again.';
+            window.location.href = '/';
+          } else {
+            // For login failures, let the error propagate to the component
+            errorMessage = error.response.data?.message || 'Invalid credentials';
+          }
           break;
         case 403:
           errorMessage = 'You do not have permission to perform this action.';

@@ -1,3 +1,30 @@
+/**
+ * @fileoverview Loading Skeleton Components
+ * 
+ * This file exports a collection of skeleton loading components that provide
+ * visual placeholders while content is being loaded. Each component matches
+ * the layout of its corresponding content component.
+ * 
+ * Components:
+ * - TeamHeaderSkeleton: Placeholder for team header information
+ * - TeamMembersSkeleton: Grid of member card placeholders
+ * - TeamIssuesSkeleton: List of issue card placeholders
+ * - TeamChatRoomSkeleton: Chat interface loading state
+ * 
+ * Features:
+ * - Pulse animation for loading indication
+ * - Responsive layouts matching content components
+ * - Consistent styling with dark theme
+ * - Placeholder shapes for text and images
+ * - Grid system for member cards
+ * - Realistic content structure simulation
+ * 
+ * Technical Details:
+ * - Uses Tailwind CSS for styling
+ * - Implements animate-pulse for loading animation
+ * - Maintains consistent spacing and dimensions
+ */
+
 import React from 'react';
 
 export const TeamHeaderSkeleton = () => (

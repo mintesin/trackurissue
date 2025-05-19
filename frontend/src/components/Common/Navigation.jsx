@@ -1,3 +1,17 @@
+/**
+ * @fileoverview Navigation Component
+ * 
+ * This component renders the main navigation bar of the application.
+ * It provides role-based navigation options and handles user authentication state.
+ * 
+ * Features:
+ * - Responsive design with mobile menu support
+ * - Role-based menu items (different for company admin vs employees)
+ * - User profile access
+ * - Authentication management (logout functionality)
+ * - Tailwind CSS styling for modern UI
+ */
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
