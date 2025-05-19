@@ -178,21 +178,34 @@ export const assignIssuePost = asynchandler(async(req, res, next) => {
         const { assigneeId } = req.body;
 
         if (!issueId || !assigneeId) {
-            throw new Error('Issue ID and Team ID are required');
+            return res.status(400).json({
+                error: 'Issue ID and Team ID are required'
+            });
         }
 
-        const assignedIssue = await createdIssueService.assignIssue(
-            issueId,
-            assigneeId,
-            {
-                assignedAt: new Date().toISOString()
-            }
-        );
+        try {
+            const assignedIssue = await createdIssueService.assignIssue(
+                issueId,
+                assigneeId,
+                {
+                    assignedAt: new Date().toISOString()
+                }
+            );
 
-        res.status(200).json({ 
-            data: assignedIssue,
-            message: 'Issue assigned successfully'
-        });
+            res.status(200).json({ 
+                data: assignedIssue,
+                message: 'Issue assigned successfully'
+            });
+        } catch (error) {
+            // Check if this is our "already assigned" error
+            if (error.message && error.message.includes('already been assigned')) {
+                return res.status(409).json({
+                    error: error.message
+                });
+            }
+            // For other errors, re-throw to be caught by the outer catch
+            throw error;
+        }
     } catch (err) {
         next(err);
     }

@@ -158,6 +158,6 @@ companySchema.pre(/^find/, function(next) {
     next();
 });
 
-const companyModel = mongoose.model('company', companySchema);
+const Company = mongoose.model('Company', companySchema);
 
-export default companyModel;
+export default Company;

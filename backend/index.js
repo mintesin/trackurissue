@@ -12,14 +12,18 @@
 
 import express from 'express';
 import adminRoute from './routes/adminRoutes.js';
-import userRoute from './routes/employeeRouters.js';
+import employeeRoute from './routes/employeeRouters.js';
+import chatRoomRoutes from './routes/chatRoomRoutes.js';
+import teamRoutes from './routes/teamRoutes.js';
 import connectDb from './config/dbConnect.js';
+import { createServer, startServer, setupServerErrorHandlers } from './config/server.js';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import errorHandler from './middleware/errorhandler.js';
 import { apiLimiter } from './middleware/authMiddleware.js';
+import { initializeModels } from './models/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -28,23 +32,28 @@ const app = express();
 
 // Security Middleware
 app.use(helmet()); // Set security HTTP headers
+// Configure CORS
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
         ? process.env.FRONTEND_URL 
-        : 'http://localhost:5173',
-    credentials: true
+        : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Body parser with size limits
 app.use(bodyParser.json({ limit: '10kb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '10kb' }));
 
-// Apply rate limiting to all routes
+// Apply rate limiting to all API routes
 app.use('/api', apiLimiter);
 
-// Routes
-app.use('/admin', adminRoute);
-app.use('/user', userRoute);
+// Routes with /api prefix
+app.use('/api/admin', adminRoute);
+app.use('/api/employee', employeeRoute);
+app.use('/api/chat', chatRoomRoutes);
+app.use('/api/team', teamRoutes);
 
 // Global error handling
 app.use(errorHandler);
@@ -61,7 +70,7 @@ app.all('*', (req, res, next) => {
  * Database connection and server startup
  * Implements secure connection handling and error management
  */
-const startServer = async () => {
+const bootstrap = async () => {
     try {
         // Connect to MongoDB with secure options
         const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1/newDb";
@@ -69,54 +78,17 @@ const startServer = async () => {
         app.locals.db = db;
         console.log("Database connection established successfully");
 
-        // Start server
+        // Initialize models after DB connection
+        initializeModels();
+        console.log("Models initialized successfully");
+
+        // Create and start server
         const PORT = process.env.PORT || 3000;
-        const server = app.listen(PORT, () => {
-            console.log(`Server is running at http://localhost:${PORT}`);
-        });
+        const server = createServer(app);
+        await startServer(server, PORT);
 
-        // Handle server errors
-        server.on('error', (error) => {
-            if (error.code === 'EADDRINUSE') {
-                console.error(`Port ${PORT} is already in use`);
-            } else {
-                console.error('Server error:', error);
-            }
-            if (process.env.NODE_ENV !== 'test') {
-                process.exit(1);
-            }
-        });
-
-        // Handle unhandled rejections
-        process.on('unhandledRejection', (err) => {
-            console.error('UNHANDLED REJECTION! 💥 Shutting down...');
-            console.error(err.name, err.message);
-            server.close(() => {
-                if (process.env.NODE_ENV !== 'test') {
-                    process.exit(1);
-                }
-            });
-        });
-
-        // Handle uncaught exceptions
-        process.on('uncaughtException', (err) => {
-            console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-            console.error(err.name, err.message);
-            if (process.env.NODE_ENV !== 'test') {
-                process.exit(1);
-            }
-        });
-
-        // Handle SIGTERM
-        process.on('SIGTERM', () => {
-            console.log('👋 SIGTERM RECEIVED. Shutting down gracefully');
-            server.close(() => {
-                console.log('💥 Process terminated!');
-                if (process.env.NODE_ENV !== 'test') {
-                    process.exit(0);
-                }
-            });
-        });
+        // Setup error handlers
+        setupServerErrorHandlers(server);
 
     } catch (err) {
         console.error("Failed to start server:", err);
@@ -128,7 +100,7 @@ const startServer = async () => {
 
 // Start the server
 if (process.env.NODE_ENV !== 'test') {
-    startServer();
+    bootstrap();
 }
 
 export default app;

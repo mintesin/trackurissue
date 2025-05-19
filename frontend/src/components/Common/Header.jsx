@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../Context/AuthContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout, selectIsAuthenticated, selectRole, selectUser } from '../../store/slices/authSlice';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, userRole, user, logout } = useAuth();
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const userRole = useSelector(selectRole);
+  const user = useSelector(selectUser);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    logout();
+    dispatch(logout());
     navigate('/login');
   };
 

@@ -32,13 +32,20 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.role = null;
+      // Clear all auth-related items from localStorage on login failure
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('company');
     },
     logout: (state) => {
       state.isAuthenticated = false;
       state.user = null;
       state.token = null;
       state.role = null;
+      // Clear all auth-related items from localStorage
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('company');
     },
     clearError: (state) => {
       state.error = null;

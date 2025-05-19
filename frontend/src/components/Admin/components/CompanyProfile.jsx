@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { employeeAPI, companyAPI } from '../../services/api';
+import { companyAPI } from '../../../services/api';
 
-const EmployeeProfile = ({ employeeId }) => {
+const CompanyProfile = ({ companyId }) => {
     const [profile, setProfile] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
@@ -9,11 +9,11 @@ const EmployeeProfile = ({ employeeId }) => {
 
     useEffect(() => {
         fetchProfile();
-    }, [employeeId]);
+    }, [companyId]);
 
     const fetchProfile = async () => {
         try {
-            const profileData = await employeeAPI.getProfile(employeeId);
+            const profileData = await companyAPI.getProfile();
             setProfile(profileData);
             setFormData(profileData);
         } catch (err) {
@@ -31,12 +31,12 @@ const EmployeeProfile = ({ employeeId }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await employeeAPI.updateProfile(employeeId, formData);
-            setProfile(response.data);
+            const updatedProfile = await companyAPI.updateProfile(formData);
+            setProfile(updatedProfile);
             setIsEditing(false);
             setError(null);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update profile');
+            setError(err.message || 'Failed to update profile');
         }
     };
 
@@ -68,43 +68,23 @@ const EmployeeProfile = ({ employeeId }) => {
                         <div>
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-bold text-white">
-                                    {profile.firstName} {profile.lastName}
+                                    {profile.companyName}
                                 </h2>
-                                <div className="flex gap-2">
-                                    {/* Show edit button if viewing own profile */}
-                                    {profile._id === employeeId && (
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                                        >
-                                            Edit Profile
-                                        </button>
-                                    )}
-                                    {/* Show deregister button if admin is viewing */}
-                                    {profile._id !== employeeId && (
-                                        <button
-                                            onClick={async () => {
-                                                if (window.confirm('Are you sure you want to deregister this employee? This action cannot be undone.')) {
-                                                    try {
-                                                        await companyAPI.deregisterEmployee(profile._id);
-                                                        // Redirect to dashboard or show success message
-                                                        window.location.href = '/admin/dashboard';
-                                                    } catch (err) {
-                                                        setError(err.message || 'Failed to deregister employee');
-                                                    }
-                                                }
-                                            }}
-                                            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                                        >
-                                            Deregister Employee
-                                        </button>
-                                    )}
-                                </div>
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                >
+                                    Edit Profile
+                                </button>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-gray-400">Email</p>
-                                    <p className="font-medium text-white">{profile.employeeEmail}</p>
+                                    <p className="text-gray-400">Admin Name</p>
+                                    <p className="font-medium text-white">{profile.adminName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-400">Admin Email</p>
+                                    <p className="font-medium text-white">{profile.adminEmail}</p>
                                 </div>
                                 <div>
                                     <p className="text-gray-400">Address</p>
@@ -127,8 +107,8 @@ const EmployeeProfile = ({ employeeId }) => {
                                     <p className="font-medium text-white">{profile.country}</p>
                                 </div>
                                 <div>
-                                    <p className="text-gray-400">Role</p>
-                                    <p className="font-medium text-white capitalize">{profile.authorization}</p>
+                                    <p className="text-gray-400">Description</p>
+                                    <p className="font-medium text-white">{profile.shortDescription}</p>
                                 </div>
                             </div>
                         </div>
@@ -136,21 +116,21 @@ const EmployeeProfile = ({ employeeId }) => {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-gray-300">First Name</label>
+                                    <label className="block text-gray-300">Company Name</label>
                                     <input
                                         type="text"
-                                        name="firstName"
-                                        value={formData.firstName}
+                                        name="companyName"
+                                        value={formData.companyName}
                                         onChange={handleInputChange}
                                         className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-gray-300">Last Name</label>
+                                    <label className="block text-gray-300">Admin Name</label>
                                     <input
                                         type="text"
-                                        name="lastName"
-                                        value={formData.lastName}
+                                        name="adminName"
+                                        value={formData.adminName}
                                         onChange={handleInputChange}
                                         className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                     />
@@ -205,6 +185,16 @@ const EmployeeProfile = ({ employeeId }) => {
                                         className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-gray-300">Description</label>
+                                    <textarea
+                                        name="shortDescription"
+                                        value={formData.shortDescription}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        rows="3"
+                                    />
+                                </div>
                             </div>
                             <div className="flex justify-end space-x-4 mt-6">
                                 <button
@@ -232,4 +222,4 @@ const EmployeeProfile = ({ employeeId }) => {
     );
 };
 
-export default EmployeeProfile;
+export default CompanyProfile;

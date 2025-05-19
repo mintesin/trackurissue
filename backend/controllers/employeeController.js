@@ -1,189 +1,87 @@
 import expressAsyncHandler from 'express-async-handler';
 import * as employeeService from '../services/employeeService.js';
-import * as genericError from '../services/genericError.js';
-
-const asynchandler = expressAsyncHandler;
+import { Employee } from '../models/index.js';
 
 /**
- * GET /admin/employee/register
- * Returns the employee registration form fields
+ * GET /employee/login
+ * Returns login form template
  */
-export const getEmployeeRegistrationFields = asynchandler(async(req, res, next) => {
-    try {
-        const registrationFields = employeeService.getEmployeeRegistrationFields();
-        res.status(200).json(registrationFields);
-    } catch (err) {
-        next(err);
-    }
+export const loginEmployeeGet = expressAsyncHandler(async (req, res, next) => {
+    const loginFields = employeeService.employeeLoginGet();
+    res.status(200).json(loginFields);
 });
 
 /**
- * DELETE /admin/employee/:id
- * Deregisters/removes an employee from the system
+ * POST /employee/login
+ * Authenticates employee and returns JWT token
  */
-export const deregisterEmployee = asynchandler(async(req, res, next) => {
-    try {
-        const employeeId = req.params.id;
-        const companyId = req.company._id; // From auth middleware
+export const loginEmployeePost = expressAsyncHandler(async (req, res, next) => {
+    const loginResponse = await employeeService.employeeLoginPost(req.body);
+    res.status(200).json(loginResponse);
+});
 
-        const result = await employeeService.deregisterEmployee(employeeId, companyId);
-        
-        res.status(200).json({
-            status: 'success',
-            message: 'Employee deregistered successfully'
-        });
-    } catch (err) {
-        next(err);
-    }
+/**
+ * GET /employee/reset
+ * Returns password reset form template
+ */
+export const resetAccountGet = expressAsyncHandler(async (req, res, next) => {
+    const resetFields = employeeService.employeeResetAccountGet();
+    res.status(200).json(resetFields);
+});
+
+/**
+ * POST /employee/reset
+ * Handles password reset
+ */
+export const resetAccountPost = expressAsyncHandler(async (req, res, next) => {
+    const updatedEmployee = await employeeService.employeeResetAccountPost(req.body);
+    res.status(200).json(updatedEmployee);
+});
+
+/**
+ * GET /employee/profile/:id
+ * Get employee profile
+ */
+export const getProfile = expressAsyncHandler(async (req, res, next) => {
+    const profile = await employeeService.getEmployeeProfile(req.params.id);
+    res.status(200).json(profile);
+});
+
+/**
+ * PUT /employee/profile/:id
+ * Update employee profile
+ */
+export const updateProfile = expressAsyncHandler(async (req, res, next) => {
+    const updatedProfile = await employeeService.updateEmployeeProfile(req.params.id, req.body);
+    res.status(200).json(updatedProfile);
+});
+
+/**
+ * GET /admin/employee/register
+ * Returns registration form template
+ */
+export const getEmployeeRegistrationFields = expressAsyncHandler(async (req, res, next) => {
+    const fields = employeeService.getEmployeeRegistrationFields();
+    res.status(200).json(fields);
 });
 
 /**
  * POST /admin/employee/register
  * Registers a new employee
  */
-export const registerEmployee = asynchandler(async(req, res, next) => {
-    try {
-        const employeeData = {
-            ...req.body,
-            company: req.company._id // Add company ID from auth middleware
-        };
-        const newEmployee = await employeeService.registerEmployee(employeeData);
-        res.status(201).json({
-            status: 'success',
-            message: 'Employee registered successfully',
-            data: {
-                employee: newEmployee
-            }
-        });
-    } catch (err) {
-        next(err);
-    }
-});
-
-
-
-/**
- * GET /employee/login
- * Returns the login form fields (email and password)
- */
-export const employeeLoginGet = asynchandler(async(req, res, next) => {
-    try {
-        const loginFields = employeeService.employeeLoginGet();
-        res.status(200).json(loginFields);
-    } catch (err) {
-        next(err);
-    }
+export const registerEmployee = expressAsyncHandler(async (req, res, next) => {
+    const newEmployee = await employeeService.registerEmployee({
+        ...req.body,
+        company: req.company._id // Add company ID from authenticated company
+    });
+    res.status(201).json(newEmployee);
 });
 
 /**
- * POST /employee/login
- * Authenticates employee credentials using secure password comparison
+ * DELETE /admin/employee/:id
+ * Deregister employee
  */
-export const employeeLoginPost = asynchandler(async(req, res, next) => {
-    try {
-        const { token, employee } = await employeeService.employeeLoginPost(req.body);
-        
-        // Set HTTP-Only cookie with JWT token
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        });
-
-        res.status(200).json({
-            status: 'success',
-            data: {
-                employee
-            }
-        });
-    } catch (err) {
-        next(err);
-    }
-});
-
-/**
- * GET /employee/reset
- * Returns password reset form fields
- */
-export const resetAccountGet = asynchandler(async(req, res, next) => {
-    try {
-        const resetFields = employeeService.employeeResetAccountGet();
-        res.status(200).json(resetFields);
-    } catch (err) {
-        next(err);
-    }
-});
-
-/**
- * POST /employee/reset
- * Handles password reset with secure password update
- */
-export const resetAccountpost = asynchandler(async(req, res, next) => {
-    try {
-        const { employeeEmail, favoriteWord, password } = req.body;
-
-        if (!employeeEmail || !favoriteWord || !password) {
-            throw new genericError.BadRequestError('Please provide all required fields');
-        }
-
-        const updatedEmployee = await employeeService.employeeResetAccountPost(req.body);
-        
-        res.status(200).json({
-            status: 'success',
-            message: 'Password reset successful',
-            data: {
-                employee: updatedEmployee
-            }
-        });
-    } catch (err) {
-        next(err);
-    }
-});
-
-/**
- * GET /employee/profile/:id
- * Returns the profile information of a specific employee
- */
-export const getEmployeeProfile = asynchandler(async(req, res, next) => {
-    try {
-        const employeeId = req.params.id;
-        const employee = await employeeService.getEmployeeProfile(employeeId);
-        
-        res.status(200).json({
-            status: 'success',
-            data: {
-                employee
-            }
-        });
-    } catch (err) {
-        next(err);
-    }
-});
-
-/**
- * PUT /employee/profile/:id
- * Updates the profile information of a specific employee
- */
-export const updateEmployeeProfile = asynchandler(async(req, res, next) => {
-    try {
-        const employeeId = req.params.id;
-        
-        // Check if the logged-in employee is updating their own profile
-        if (req.employee._id.toString() !== employeeId) {
-            throw new genericError.UnauthorizedError('You can only update your own profile');
-        }
-
-        const updatedEmployee = await employeeService.updateEmployeeProfile(employeeId, req.body);
-        
-        res.status(200).json({
-            status: 'success',
-            message: 'Profile updated successfully',
-            data: {
-                employee: updatedEmployee
-            }
-        });
-    } catch (err) {
-        next(err);
-    }
+export const deregisterEmployee = expressAsyncHandler(async (req, res, next) => {
+    const result = await employeeService.deregisterEmployee(req.params.id, req.company._id);
+    res.status(200).json(result);
 });

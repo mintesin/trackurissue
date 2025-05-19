@@ -1,51 +1,66 @@
 import React from 'react';
 
-const TeamIssues = ({ issues }) => {
-  const getPriorityColor = (priority) => {
-    switch (priority?.toLowerCase()) {
-      case 'high':
-        return 'bg-red-500';
-      case 'medium':
-        return 'bg-yellow-500';
-      case 'low':
-        return 'bg-green-500';
-      default:
-        return 'bg-gray-500';
-    }
+const UrgencyBadge = ({ urgency }) => {
+  const colors = {
+    high: 'bg-red-900 text-red-200',
+    normal: 'bg-yellow-900 text-yellow-200',
+    low: 'bg-green-900 text-green-200'
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
-      <h2 className="text-xl font-semibold text-white mb-4">Assigned Issues</h2>
-      <div className="space-y-4">
-        {issues?.map((issue) => (
-          <div 
-            key={issue._id}
-            className="bg-gray-700 rounded-lg p-4"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-white font-medium">{issue.topic}</h3>
-              <span className={`${getPriorityColor(issue.urgency)} px-2 py-1 rounded text-xs text-white`}>
-                {issue.urgency}
-              </span>
-            </div>
-            <p className="text-gray-300 text-sm mb-3">
-              {issue.description}
-            </p>
-            <div className="flex justify-between items-center text-sm text-gray-400">
-              <span>Assigned: {new Date(issue.assignedAt).toLocaleDateString()}</span>
-              <button className="text-blue-400 hover:text-blue-300 transition-colors">
-                View Details
-              </button>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colors[urgency] || colors.normal}`}>
+      {urgency.charAt(0).toUpperCase() + urgency.slice(1)}
+    </span>
+  );
+};
+
+const StatusBadge = ({ status }) => {
+  const colors = {
+    pending: 'bg-yellow-900 text-yellow-200',
+    inprogress: 'bg-blue-900 text-blue-200',
+    completed: 'bg-green-900 text-green-200',
+    cancelled: 'bg-red-900 text-red-200'
+  };
+
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${colors[status] || colors.pending}`}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+};
+
+const TeamIssues = ({ issues = [] }) => {
+  return (
+    <div className="space-y-4">
+      {issues.map((issue) => (
+        <div 
+          key={issue._id}
+          className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors"
+        >
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-white truncate">
+                {issue.topic}
+              </h3>
+              <p className="mt-1 text-sm text-gray-300 line-clamp-2">
+                {issue.description}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <UrgencyBadge urgency={issue.urgency} />
+                <StatusBadge status={issue.status} />
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-800 text-gray-300">
+                  Assigned to: {`${issue.assignee.firstName} ${issue.assignee.lastName}`}
+                </span>
+                {issue.assignedAt && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-800 text-gray-300">
+                    Assigned: {new Date(issue.assignedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        ))}
-        {(!issues || issues.length === 0) && (
-          <p className="text-gray-300 text-center py-4">
-            No issues assigned to the team
-          </p>
-        )}
-      </div>
+        </div>
+      ))}
     </div>
   );
 };

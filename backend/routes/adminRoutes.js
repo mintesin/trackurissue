@@ -12,7 +12,6 @@ import express from 'express';
 import * as companyControllers from '../controllers/companyControllers.js';
 import * as teamControllers from '../controllers/teamController.js';   
 import * as createdIssueControllers from '../controllers/createdIssueContoller.js';
-import * as chatRoomControllers from '../controllers/chatRoomController.js';
 import * as employeeController from '../controllers/employeeController.js';
 import { companyAuth, loginLimiter } from '../middleware/authMiddleware.js';
 
@@ -62,12 +61,11 @@ router.route('/team/:teamId')
     .delete(teamControllers.teamdeletionPost);
 
 router.route('/team/:teamId/member')
-    .get(teamControllers.addMemeberGet)
-    .post(teamControllers.addMemeberPost);
+    .get(teamControllers.getTeamMembers)
+    .post(teamControllers.addTeamMember);
 
 router.route('/team/:teamId/member/:employeeId')
-    .get(teamControllers.removeMemeberGet)
-    .delete(teamControllers.removeMemeberPost);
+    .delete(teamControllers.removeTeamMember);
 
 // Issue Management Routes
 router.route('/issues')
@@ -87,15 +85,6 @@ router.route('/issues/:issueId')
 router.route('/issues/:issueId/assign')
     .get(createdIssueControllers.assignIssueGet)
     .post(createdIssueControllers.assignIssuePost);
-
-// Chat Room Management Routes
-router.route('/room')
-    .get(chatRoomControllers.createRoomGet)
-    .post(chatRoomControllers.createRoomPost);
-
-router.route('/room/:roomId')
-    .get(chatRoomControllers.deleteRoomGet)
-    .delete(chatRoomControllers.deleteRoomPost);
 
 /**
  * Error Handler

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000'; // adjust based on your backend URL
+const BASE_URL = 'http://localhost:3000/api';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -29,19 +29,24 @@ api.interceptors.response.use(
       // Server responded with error
       switch (error.response.status) {
         case 400:
-          errorMessage = 'Invalid input. Please check your data and try again.';
+          errorMessage = error.response.data?.message || 'Invalid input. Please check your data and try again.';
           break;
         case 401:
-          errorMessage = 'Please login to continue.';
+          // Clear local storage and reload page on session expiry
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('company');
+          errorMessage = 'Session expired. Please login again.';
+          window.location.href = '/';
           break;
         case 403:
           errorMessage = 'You do not have permission to perform this action.';
           break;
         case 404:
-          errorMessage = 'The requested resource was not found.';
+          errorMessage = error.response.data?.message || 'The requested resource was not found.';
           break;
         case 409:
-          errorMessage = 'This resource already exists.';
+          errorMessage = error.response.data?.message || 'This resource already exists.';
           break;
         case 500:
           errorMessage = 'Server error. Please try again later.';
@@ -64,50 +69,28 @@ api.interceptors.response.use(
 // Auth API calls
 export const authAPI = {
   // Company auth
-  companyLogin: (credentials) => {
-    return api.post('/admin/login', credentials);
-  },
+  companyLogin: (credentials) => api.post('/admin/login', credentials),
   companyRegister: (data) => api.post('/admin/register', data),
   companyRegistrationFields: () => api.get('/admin/register'),
   companyReset: (resetData) => api.post('/admin/reset', resetData),
   companyResetFields: () => api.get('/admin/reset'),
 
   // Employee auth
-  employeeLogin: (credentials) => api.post('/user/login', credentials),
-  employeeReset: (resetData) => api.post('/user/reset', resetData),
-  employeeResetFields: () => api.get('/user/reset'),
+  employeeLogin: (credentials) => api.post('/employee/login', credentials),
+  employeeReset: (resetData) => api.post('/employee/reset', resetData),
+  employeeResetFields: () => api.get('/employee/reset'),
   employeeRegistrationFields: () => api.get('/admin/employee/register'),
 };
 
 // Company/Admin API calls
 export const companyAPI = {
   getDashboard: () => api.get('/admin'),
-  getProfile: () => api.get('/admin').then(response => ({ data: response.data.company })),
+  getProfile: () => api.get('/admin/profile'),
   updateProfile: (profileData) => api.put('/admin/profile', profileData),
   
   // Team management
   getTeamCreationForm: () => api.get('/admin/team'),
-  createTeam: (teamData) => {
-    const { teamName, description } = teamData;
-    const currentUser = JSON.parse(localStorage.getItem('user'));
-    const currentCompany = JSON.parse(localStorage.getItem('company'));
-
-    if (!currentUser?._id || !currentCompany?._id) {
-      return Promise.reject({
-        message: 'User or company information missing. Please log in again.',
-        status: 400
-      });
-    }
-
-    const formattedData = {
-      teamName,
-      description,
-      teamAdmin: currentUser._id,
-      company: currentCompany._id
-    };
-
-    return api.post('/admin/team', formattedData);
-  },
+  createTeam: (teamData) => api.post('/admin/team', teamData),
   getTeamDeletionForm: (teamId) => api.get(`/admin/team/${teamId}`),
   deleteTeam: (teamId) => api.delete(`/admin/team/${teamId}`),
   
@@ -116,70 +99,59 @@ export const companyAPI = {
   addTeamMember: (teamId, memberData) => api.post(`/admin/team/${teamId}/member`, memberData),
   getRemoveMemberForm: (teamId, employeeId) => api.get(`/admin/team/${teamId}/member/${employeeId}`),
   removeTeamMember: (teamId, employeeId) => api.delete(`/admin/team/${teamId}/member/${employeeId}`),
+  
+  // Employee management
   registerEmployee: (employeeData) => api.post('/admin/employee/register', employeeData),
   deregisterEmployee: (employeeId) => api.delete(`/admin/employee/${employeeId}`),
-  
-  // Issue management
-  getIssues: () => api.get('/admin/issues'),
-  createIssue: (issueData) => {
-    const currentUser = JSON.parse(localStorage.getItem('user'));
-    const currentCompany = JSON.parse(localStorage.getItem('company'));
-
-    if (!currentUser?._id || !currentCompany?._id) {
-      return Promise.reject({
-        message: 'User or company information missing. Please log in again.',
-        status: 400
-      });
-    }
-
-    const formattedData = {
-      ...issueData,
-      company: currentCompany._id,
-      createdBy: currentUser._id
-    };
-
-    return api.post('/admin/issues', formattedData);
-  },
-  getIssueFields: () => api.get('/admin/issues/create'),
-  getIssue: (issueId) => {
-    if (!issueId) {
-      return Promise.reject({ message: 'Issue ID is required' });
-    }
-    return api.get(`/admin/issues/${issueId}`);
-  },
-  updateIssue: (issueId, issueData) => api.put(`/admin/issues/${issueId}`, issueData),
-  deleteIssue: (issueId) => api.delete(`/admin/issues/${issueId}`),
-  getAssignIssueForm: (issueId) => api.get(`/admin/issues/${issueId}/assign`),
-  assignIssue: (issueId, teamId) => {
-    if (!issueId || !teamId) {
-      return Promise.reject({ message: 'Issue ID and Team ID are required' });
-    }
-    return api.post(`/admin/issues/${issueId}/assign`, {
-      assigneeId: teamId
-    });
-  },
 };
 
 // Employee API calls
 export const employeeAPI = {
   // Profile management
-  getProfile: (employeeId) => api.get(`/user/profile/${employeeId}`),
-  updateProfile: (employeeId, profileData) => api.put(`/user/profile/${employeeId}`, profileData),
-  
-  // Chat room management
-  getChatRoom: (roomId) => api.get(`/user/chat/${roomId}`),
-  sendMessage: (roomId, message) => api.post(`/user/chat/${roomId}`, { message }),
+  getProfile: (employeeId) => api.get(`/employee/profile/${employeeId}`),
+  updateProfile: (employeeId, profileData) => api.put(`/employee/profile/${employeeId}`, profileData),
   
   // Issue management
-  getAssignedIssues: () => api.get('/user/assigned-issues'),
-  getIssueToSolve: (issueId) => api.get(`/user/assigned-issues/${issueId}/solve`),
-  solveIssue: (issueId, solutionData) => api.post(`/user/assigned-issues/${issueId}/solve`, solutionData),
+  getAssignedIssues: () => api.get('/employee/assigned-issues'),
+  getIssueToSolve: (issueId) => api.get(`/employee/assigned-issues/${issueId}/solve`),
+  solveIssue: (issueId, solutionData) => api.post(`/employee/assigned-issues/${issueId}/solve`, solutionData),
 };
 
 // Team API calls
 export const teamAPI = {
-  getDashboard: (teamId) => api.get(`/user/team/${teamId}`),
-  getMembers: (teamId) => api.get(`/user/team/${teamId}/members`),
+  getDashboard: async (teamId) => {
+    const response = await api.get(`/team/${teamId}`);
+    console.log('Dashboard API response:', response);
+    return response;
+  },
+  getMembers: async (teamId) => {
+    const response = await api.get(`/team/${teamId}/members`);
+    console.log('Members API response:', response);
+    return {
+      ...response,
+      data: Array.isArray(response.data) ? response.data : []
+    };
+  },
+  addMember: (teamId, employeeId) => api.post(`/team/${teamId}/members`, { employeeId }),
+  removeMember: (teamId, employeeId) => api.delete(`/team/${teamId}/members/${employeeId}`),
+};
+
+// Chat Room API calls
+export const chatAPI = {
+  createChatRoom: (teamId, participants) => 
+    api.post('/chat/room', { teamId, participants }),
+  
+  getChatRoom: (roomId, page = 1, limit = 50) => 
+    api.get(`/chat/room/${roomId}`, { params: { page, limit } }),
+  
+  sendMessage: (roomId, content) => 
+    api.post(`/chat/room/${roomId}/message`, { content }),
+  
+  markAsRead: (roomId) => 
+    api.put(`/chat/room/${roomId}/read`),
+  
+  getUnreadCount: (roomId) => 
+    api.get(`/chat/room/${roomId}/unread`)
 };
 
 export default api;

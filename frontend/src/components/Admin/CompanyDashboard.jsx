@@ -16,7 +16,7 @@ const CompanyDashboard = () => {
   const [issues, setIssues] = useState([]);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [showTeams, setShowTeams] = useState(true); // Toggle between teams and employees view
+  const [showTeams, setShowTeams] = useState(true);
   
   // Modal visibility states
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
@@ -26,13 +26,13 @@ const CompanyDashboard = () => {
   // Function to show error message
   const showError = (message) => {
     setError(message);
-    setTimeout(() => setError(null), 5000);
+    setTimeout(() => setError(null), 10000);
   };
 
   // Function to show success message
   const showSuccess = (message) => {
     setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(null), 5000);
+    setTimeout(() => setSuccessMessage(null), 5000); // Reduced timeout to 5 seconds for better UX
   };
 
   // Fetch dashboard data on component mount
@@ -43,6 +43,8 @@ const CompanyDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const response = await companyAPI.getDashboard();
+      console.log('Dashboard response:', response.data);
+      
       const transformedTeams = response.data.teams.map(team => ({
         ...team,
         members: team.members?.map(member => ({
@@ -50,6 +52,9 @@ const CompanyDashboard = () => {
           isTeamLeader: member.authorization === 'teamleader'
         })) || []
       }));
+      
+      console.log('Available employees:', response.data.employees);
+      
       setTeams(transformedTeams);
       setEmployees(response.data.employees);
       setIssues(response.data.issues);
@@ -62,7 +67,34 @@ const CompanyDashboard = () => {
 
   const handleCreateTeam = async (newTeam) => {
     try {
-      await companyAPI.createTeam(newTeam);
+      console.log('Received team data from modal:', newTeam);
+      
+      if (!newTeam.teamLeaders || newTeam.teamLeaders.length === 0) {
+        showError('Please select at least one team leader');
+        return;
+      }
+
+      if (!newTeam.teamName?.trim()) {
+        showError('Team name is required');
+        return;
+      }
+
+      const company = JSON.parse(localStorage.getItem('company'));
+      if (!company?._id) {
+        showError('Company information is missing. Please try logging in again.');
+        return;
+      }
+
+      const teamData = {
+        teamName: newTeam.teamName.trim(),
+        description: newTeam.description?.trim() || '',
+        teamLeaders: newTeam.teamLeaders,
+        company: company._id
+      };
+
+      console.log('Submitting team creation with validated data:', teamData);
+
+      await companyAPI.createTeam(teamData);
       setIsCreateTeamModalOpen(false);
       showSuccess('Team created successfully');
       fetchDashboardData();
@@ -73,7 +105,7 @@ const CompanyDashboard = () => {
 
   const handleAddEmployee = async (newEmployee) => {
     try {
-      const requiredFields = ['firstName', 'lastName', 'email', 'teamId', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord'];
+      const requiredFields = ['firstName', 'lastName', 'email', 'teamId', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord', 'birthDate'];
       const missingFields = requiredFields.filter(field => !newEmployee[field]);
       
       if (missingFields.length > 0) {
@@ -81,9 +113,29 @@ const CompanyDashboard = () => {
         return;
       }
 
-      await companyAPI.registerEmployee(newEmployee);
+      // Map form fields to match backend expectations
+      const employeeData = {
+        ...newEmployee,
+        employeeEmail: newEmployee.email,  // Map email to employeeEmail
+        birthDate: newEmployee.birthDate || new Date().toISOString().split('T')[0]  // Ensure birthDate is provided
+      };
+      
+      const response = await companyAPI.registerEmployee(employeeData);
       setIsAddEmployeeModalOpen(false);
-      showSuccess('Employee added successfully');
+      
+      console.log('Frontend - Generated Password:', response.data?.generatedPassword);
+      
+      if (response.data && response.data.generatedPassword) {
+        // Show success message with the generated password
+        showSuccess(`Employee added successfully! Please securely share these credentials with the employee:
+        Email: ${newEmployee.email}
+        Password: ${response.data.generatedPassword}
+        
+        Make sure to save this password as it will only be shown once.`);
+      } else {
+        showSuccess('Employee added successfully!');
+      }
+      
       fetchDashboardData();
     } catch (error) {
       showError(error.message || 'Error adding employee');
@@ -180,6 +232,7 @@ const CompanyDashboard = () => {
           isOpen={isCreateTeamModalOpen}
           onClose={() => setIsCreateTeamModalOpen(false)}
           onSubmit={handleCreateTeam}
+          employees={employees} // Show all employees since they can be in multiple teams
         />
 
         <CreateIssueModal
