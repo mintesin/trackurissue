@@ -36,10 +36,13 @@ export const employeeAuth = async (req, res, next) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             
-            // 3. Check if employee still exists
+            // 3. Check if employee still exists and populate team data
             const employee = await employeeModel
                 .findById(decoded.id)
-                .select('+password'); // Explicitly include password for comparison
+                .select('+password') // Explicitly include password for comparison
+                .populate('team') // Populate single team reference
+                .populate('teams') // Populate teams array
+                .populate('leadingTeams'); // Populate teams they lead
 
             if (!employee) {
                 throw new genericError.UnauthorizedError('The employee belonging to this token no longer exists');

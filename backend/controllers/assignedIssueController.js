@@ -1,33 +1,46 @@
 import expressAsyncHandler from 'express-async-handler';
-import * as createdIssueService from '../services/assignedIssueService.js';
+import * as assignedIssueService from '../services/assignedIssueService.js';
 
-const asynchandler = expressAsyncHandler;
+const asyncHandler = expressAsyncHandler;
 
 /**
  * GET /assigned-issues
  * Retrieves list of all assigned issues
- * Returns array of issue objects with:
- * - Issue details
- * - Assignee information
- * - Current status
  */
-export const assignedIssueList = asynchandler(async (req, res, next) => {
+export const assignedIssueList = asyncHandler(async (req, res) => {
     try {
-        const issues = await createdIssueService.getIssuesByStatus('assigned');
-        res.status(200).json(issues);
+        // Get teamId from authenticated employee
+        const teamId = req.employee.team;
+        if (!teamId) {
+            return res.status(400).json({ message: 'No team assigned to employee' });
+        }
+
+        console.log('Controller - Fetching issues for team:', teamId);
+        console.log('Controller - Employee:', req.employee);
+
+        const issues = await assignedIssueService.getAssignedIssues(teamId);
+        
+        // Always return an array, even if empty
+        const issuesList = issues || [];
+        console.log('Controller - Found issues:', issuesList);
+        
+        res.status(200).json(issuesList);
     } catch (err) {
-        next(err);
+        console.error('Controller - Error:', err);
+        res.status(500).json({ 
+            message: 'Error fetching assigned issues',
+            error: err.message 
+        });
     }
 });
 
 /**
  * GET /assigned-issues/:id/solve
  * Returns form for marking an issue as solved
- * Includes issue details and solution fields
  */
-export const assignedIssueSolveGet = asynchandler(async (req, res, next) => {
+export const assignedIssueSolveGet = asyncHandler(async (req, res) => {
     try {
-        const issue = await createdIssueService.getIssueById(req.params.id);
+        const issue = await assignedIssueService.getSolveIssueData(req.params.id);
         res.status(200).json({
             issueDetails: issue,
             solutionFields: {
@@ -36,31 +49,32 @@ export const assignedIssueSolveGet = asynchandler(async (req, res, next) => {
             }
         });
     } catch (err) {
-        next(err);
+        console.error('Get solve issue error:', err);
+        res.status(500).json({ message: err.message });
     }
 });
 
 /**
  * POST /assigned-issues/:id/solve
  * Marks an assigned issue as solved
- * Updates issue status and stores solution details
- * Returns updated issue object
  */
-export const assignedIssueSolvePost = asynchandler(async (req, res, next) => {
+export const assignedIssueSolvePost = asyncHandler(async (req, res) => {
     try {
-        const solvedIssue = await createdIssueService.updateIssue(
-            req.params.id, 
-            {
-                status: 'solved',
-                solution: req.body.solution,
-                additionalNotes: req.body.additionalNotes,
-                solvedAt: new Date()
-            }
+        const { solution, additionalNotes } = req.body;
+        const solvedIssue = await assignedIssueService.solveIssue(
+            req.params.id,
+            solution,
+            additionalNotes
         );
         res.status(200).json(solvedIssue);
     } catch (err) {
-        next(err);
+        console.error('Solve issue error:', err);
+        res.status(500).json({ message: err.message });
     }
 });
 
-
+export default {
+    assignedIssueList,
+    assignedIssueSolveGet,
+    assignedIssueSolvePost
+};

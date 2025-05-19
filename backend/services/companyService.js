@@ -31,7 +31,7 @@ export const companyHome = async (companyId) => {
                 .populate({
                     path: 'members',
                     select: 'firstName lastName authorization',
-                    model: 'employee'
+                    model: 'Employee'  // Changed from 'employee' to 'Employee'
                 })
                 .lean()
                 .then(teams => teams.map(team => ({
@@ -48,7 +48,7 @@ export const companyHome = async (companyId) => {
         ]);
 
         if (!company) {
-            throw new genericError.notFoundError('Company not found');
+            throw new genericError.NotFoundError('Company not found');  // Fixed casing of NotFoundError
         }
 
         return {
@@ -58,6 +58,7 @@ export const companyHome = async (companyId) => {
             issues
         };
     } catch (error) {
+        console.error('Error in companyHome:', error);  // Added error logging
         throw error;
     }
 };
@@ -91,7 +92,6 @@ export const loginGet = () => {
  * @returns {Promise<Object>} Authenticated company with JWT token
  */
 export const loginPost = async (loginData) => {
-
     try {
         const { adminEmail, password } = loginData;
 
@@ -107,7 +107,7 @@ export const loginPost = async (loginData) => {
 
         const token = jwt.sign(
             { id: company._id },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'your-secret-key',  // Added fallback secret
             { expiresIn: '24h' }
         );
 
@@ -118,6 +118,7 @@ export const loginPost = async (loginData) => {
             token
         };
     } catch (error) {
+        console.error('Error in loginPost:', error);  // Added error logging
         throw error;
     }
 };
@@ -304,7 +305,7 @@ export const registerPost = async (companyData) => {
         // 5. Generate JWT token
         const token = jwt.sign(
             { id: company._id },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'your-secret-key',  // Added fallback secret
             { expiresIn: '24h' }
         );
 
@@ -317,6 +318,7 @@ export const registerPost = async (companyData) => {
             token
         };
     } catch (error) {
+        console.error('Error in registerPost:', error);  // Added error logging
         // Re-throw mongoose validation errors as BadRequestError
         if (error.name === 'ValidationError') {
             throw new genericError.BadRequestError(error.message);

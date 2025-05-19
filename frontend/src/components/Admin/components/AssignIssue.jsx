@@ -53,7 +53,18 @@ const AssignIssue = () => {
                 throw new Error('Invalid response format');
             }
         } catch (err) {
-            setError(err.message || 'Failed to assign issue');
+            // Check if this is our "already assigned" error from the backend
+            if (err.message && err.message.includes('already been assigned')) {
+                setError('This issue has already been assigned');
+                // Update the issue state to show current assignment
+                setIssue(prev => ({
+                    ...prev,
+                    status: 'assigned',
+                    assignedTeam: prev.assignedTeam || 'another team' // Fallback text if team name not available
+                }));
+            } else {
+                setError(err.message || 'Failed to assign issue');
+            }
         } finally {
             setLoading(false);
         }
@@ -82,9 +93,13 @@ const AssignIssue = () => {
             <div className="min-h-screen bg-gray-900 py-8">
                 <div className="max-w-4xl mx-auto p-6">
                     <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
-                        <p className="text-red-400 text-center">{error}</p>
-                        <div className="mt-4 p-4 bg-gray-700 rounded text-sm overflow-auto text-gray-300">
-                            <pre>{JSON.stringify({ issue, teams }, null, 2)}</pre>
+                        <div className="text-center">
+                            <p className="text-red-400 mb-4">{error}</p>
+                            {issue?.status === 'assigned' && (
+                                <p className="text-gray-300">
+                                    This issue is currently assigned to team: <span className="font-semibold">{issue.assignedTeam}</span>
+                                </p>
+                            )}
                         </div>
                         <button
                             onClick={() => navigate(-1)}

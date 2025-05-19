@@ -17,27 +17,25 @@ const assignedIssueSchema = new Schema({
 		ref: "createdIssue",
 		required: true
 	},
-	topic: {
-		type:String,
-		required:true,
-		maxLenght:100
-	},
-	description: {
-		type:String, 
-		required:true
-	},
 	assignedAt: {
-		type:Date,
-		required:true
+		type: Date,
+		default: Date.now,
+		required: true
 	},
-	urgency: {
-		type:String,
-		enum: ['urgent','notUrgent']
-	},
-	team:{
+	team: {
 		type: Schema.Types.ObjectId, 
-		ref: "teams",
-		required:true
+		ref: "Team",
+		required: true
+	},
+	assignee: {
+		type: Schema.Types.ObjectId,
+		ref: "Employee",
+		required: false
+	},
+	status: {
+		type: String,
+		enum: ["assigned", "inProgress", "solved"],
+		default: "assigned"
 	}
 })
 

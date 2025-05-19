@@ -10,14 +10,38 @@ import * as createdIssueService from './createdIssueService.js';
  */
 export const getAssignedIssues = async (teamId) => {
     try {
+        console.log('Service - Getting assigned issues for team:', teamId);
+        
         const team = await teamModel.findById(teamId);
         if (!team) {
             throw new Error('Team not found');
         }
         
-        return await assignedIssueModel.find({ team: teamId })
-            .populate('issue')
-            .populate('assignee');
+        const issues = await assignedIssueModel.find({ team: teamId })
+            .populate({
+                path: 'issue',
+                select: 'topic description urgency status createdAt company',
+                model: 'createdIssue'
+            })
+            .populate({
+                path: 'assignee',
+                select: 'firstName lastName email',
+                model: 'Employee'
+            })
+            .populate({
+                path: 'team',
+                select: 'teamName',
+                model: 'Team'
+            })
+            .lean();
+
+        if (!issues || issues.length === 0) {
+            console.log('No issues found for team:', teamId);
+            return [];
+        }
+
+        console.log('Service - Found issues:', issues);
+        return issues;
     } catch (error) {
         throw error;
     }

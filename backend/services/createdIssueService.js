@@ -225,6 +225,12 @@ export const assignIssue = async (issueId, teamId) => {
             throw new Error('Invalid ID format');
         }
 
+        // Check if issue is already assigned
+        const existingAssignment = await assignedIssueModel.findOne({ issue: issueId });
+        if (existingAssignment) {
+            throw new genericError.OperationError("This issue has already been assigned. Please edit the existing assignment instead.");
+        }
+
         let [theIssue, theTeam] = await Promise.all([
             crIssueModel.findById(issueId).select('topic description createdAt urgency status'),
             teamModel.findById(teamId).select('teamName description members')
@@ -242,10 +248,8 @@ export const assignIssue = async (issueId, teamId) => {
         let assignedIssueInstance = new assignedIssueModel({
             issue: issueId,
             team: teamId,
-            topic: theIssue.topic,
-            description: theIssue.description,
-            urgency: theIssue.urgency,
-            assignedAt: new Date()
+            assignedAt: new Date(),
+            status: 'assigned'
         });
 
         await Promise.all([

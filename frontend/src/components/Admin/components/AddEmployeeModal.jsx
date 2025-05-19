@@ -20,6 +20,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
           });
         });
         initialData.teamId = '';
+        initialData.birthDate = new Date().toISOString().split('T')[0]; // Set default birthDate
         setFormData(initialData);
         setLoading(false);
       } catch (err) {
@@ -145,6 +146,26 @@ const AddEmployeeModal = ({ isOpen, onClose, onSubmit, teams }) => {
                     </div>
                   </div>
                 ))}
+
+                {/* Birth Date Field */}
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="birthDate" className="block text-sm font-medium text-gray-300">
+                      Birth Date
+                    </label>
+                    <div className="mt-1">
+                      <input
+                        type="date"
+                        id="birthDate"
+                        name="birthDate"
+                        value={formData.birthDate || ''}
+                        onChange={handleChange}
+                        required
+                        className="appearance-none block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 {/* Team Selection */}
                 <div>

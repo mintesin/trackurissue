@@ -1,10 +1,11 @@
 import expressAsyncHandler from 'express-async-handler';
 import * as teamService from '../services/teamService.js';
+import * as genericError from '../services/genericError.js';
 
 const asynchandler = expressAsyncHandler;
 
 /**
- * GET /team/dashboard
+ * GET /team/:teamId
  * Retrieves team dashboard with:
  * - Team details
  * - Member list
@@ -13,10 +14,36 @@ const asynchandler = expressAsyncHandler;
  */
 export const teamdashboard = asynchandler(async(req, res, next) => {
     try {
-        const teamId = req.team._id; // Assuming team is set in auth middleware
-        const dashboardData = await teamService.getTeamDashboard(teamId);
+        const teamId = req.params.teamId;
+        console.log('Team dashboard request for team:', teamId);
+        console.log('Authenticated employee:', req.employee);
+
+        if (!teamId) {
+            throw new genericError.BadRequestError('Team ID is required');
+        }
+
+        // Check if employee is a member of the team (either in teams array or single team field)
+        const isMember = (req.employee.teams && req.employee.teams.some(team => 
+            team._id.toString() === teamId.toString()
+        )) || (req.employee.team && req.employee.team._id.toString() === teamId.toString());
+
+        if (!isMember) {
+            throw new genericError.UnauthorizedError('You are not a member of this team');
+        }
+
+        const dashboardData = await teamService.teamHome(teamId);
+        
+        if (!dashboardData) {
+            throw new genericError.NotFoundError('Team not found');
+        }
+
+        // Log team members data
+        console.log('Team members:', dashboardData.team.members);
+        console.log('Team leaders:', dashboardData.team.teamLeaders);
+        
         res.status(200).json(dashboardData);
     } catch (err) {
+        console.error('Team dashboard error:', err);
         next(err);
     }
 });
@@ -24,11 +51,10 @@ export const teamdashboard = asynchandler(async(req, res, next) => {
 /**
  * GET /team/create
  * Returns form fields required to create a new team
- * Includes all fields from team model as empty template
  */
 export const teamcreationGet = asynchandler(async(req, res, next) => {
     try {
-        const creationFields = teamService.getTeamCreationFields();
+        const creationFields = await teamService.getTeamCreationFields();
         res.status(200).json(creationFields);
     } catch (err) {
         next(err);
@@ -37,9 +63,7 @@ export const teamcreationGet = asynchandler(async(req, res, next) => {
 
 /**
  * POST /team/create
- * Creates a new team record in database
- * Validates and processes creation form data
- * Returns the newly created team object
+ * Creates a new team
  */
 export const teamcreationPost = asynchandler(async(req, res, next) => {
     try {
@@ -52,8 +76,7 @@ export const teamcreationPost = asynchandler(async(req, res, next) => {
 
 /**
  * GET /team/:teamId/delete
- * Returns confirmation data before deleting a team
- * Includes team details for verification
+ * Returns team details for deletion confirmation
  */
 export const teamdeletionGet = asynchandler(async(req, res, next) => {
     try {
@@ -66,8 +89,7 @@ export const teamdeletionGet = asynchandler(async(req, res, next) => {
 
 /**
  * DELETE /team/:teamId
- * Deletes an existing team record
- * Returns success message upon deletion
+ * Deletes a team
  */
 export const teamdeletionPost = asynchandler(async(req, res, next) => {
     try {
@@ -79,65 +101,71 @@ export const teamdeletionPost = asynchandler(async(req, res, next) => {
 });
 
 /**
- * GET /team/:teamId/add-member
- * Returns form for adding a member to team
- * Includes employee selection options
+ * GET /team/:teamId/members
+ * Returns list of team members with their roles
  */
-export const addMemeberGet = asynchandler(async(req, res, next) => {
+export const getTeamMembers = asynchandler(async(req, res, next) => {
     try {
-        const addMemberData = await teamService.getAddMemberData(req.params.teamId);
-        res.status(200).json(addMemberData);
+        const { teamId } = req.params;
+        
+        if (!teamId) {
+            throw new genericError.BadRequestError('Team ID is required');
+        }
+
+        const members = await teamService.getTeamMembers(teamId);
+        console.log('Fetched team members:', members);
+        res.status(200).json(members);
     } catch (err) {
         next(err);
     }
 });
 
 /**
- * POST /team/:teamId/add-member
+ * POST /team/:teamId/members
  * Adds a member to the team
- * Updates team members list
- * Returns updated team object
  */
-export const addMemeberPost = asynchandler(async(req, res, next) => {
+export const addTeamMember = asynchandler(async(req, res, next) => {
     try {
-        const updatedTeam = await teamService.addTeamMember(
-            req.params.teamId,
-            req.body.employeeId
-        );
-        res.status(200).json(updatedTeam);
+        const { teamId } = req.params;
+        const { employeeId } = req.body;
+        
+        if (!teamId || !employeeId) {
+            throw new genericError.BadRequestError('Team ID and Employee ID are required');
+        }
+
+        const result = await teamService.addMember(teamId, employeeId);
+        res.status(200).json(result);
     } catch (err) {
         next(err);
     }
 });
 
 /**
- * GET /team/:teamId/remove-member
- * Returns form for removing a member from team
- * Includes current members list
- */
-export const removeMemeberGet = asynchandler(async(req, res, next) => {
-    try {
-        const removeMemberData = await teamService.getRemoveMemberData(req.params.teamId);
-        res.status(200).json(removeMemberData);
-    } catch (err) {
-        next(err);
-    }
-});
-
-/**
- * POST /team/:teamId/remove-member
+ * DELETE /team/:teamId/members/:employeeId
  * Removes a member from the team
- * Updates team members list
- * Returns updated team object
  */
-export const removeMemeberPost = asynchandler(async(req, res, next) => {
+export const removeTeamMember = asynchandler(async(req, res, next) => {
     try {
-        const updatedTeam = await teamService.removeTeamMember(
-            req.params.teamId,
-            req.body.employeeId
-        );
-        res.status(200).json(updatedTeam);
+        const { teamId, employeeId } = req.params;
+        
+        if (!teamId || !employeeId) {
+            throw new genericError.BadRequestError('Team ID and Employee ID are required');
+        }
+
+        const result = await teamService.removeMember(teamId, employeeId);
+        res.status(200).json(result);
     } catch (err) {
         next(err);
     }
 });
+
+export default {
+    teamdashboard,
+    teamcreationGet,
+    teamcreationPost,
+    teamdeletionGet,
+    teamdeletionPost,
+    getTeamMembers,
+    addTeamMember,
+    removeTeamMember
+};

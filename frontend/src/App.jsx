@@ -1,11 +1,13 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './Context/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import IssueDetails from './components/Admin/components/IssueDetails';
 import AssignIssue from './components/Admin/components/AssignIssue';
 import EditIssue from './components/Admin/components/EditIssue';
+import EmployeeProfile from './components/Employee/EmployeeProfile';
+import CompanyProfile from './components/Admin/components/CompanyProfile';
 
 // Layout Components
-import Header from './components/Common/Header';
+import Navigation from './components/Common/Navigation';
 import Footer from './components/Common/Footer';
 
 // Auth Components
@@ -17,9 +19,21 @@ import ResetPassword from './components/Auth/ResetPassword';
 import CompanyDashboard from './components/Admin/CompanyDashboard';
 import TeamDashboard from './components/Dashboard/TeamDashboard';
 
+// Wrapper component for Profile to handle URL parameters
+const ProfileWrapper = () => {
+  const { id } = useParams();
+  const userRole = useSelector(state => state.auth.role);
+  
+  if (userRole === 'company') {
+    return <CompanyProfile companyId={id} />;
+  }
+  return <EmployeeProfile employeeId={id} />;
+};
+
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { isAuthenticated, userRole } = useAuth();
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const userRole = useSelector(state => state.auth.role);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -34,11 +48,12 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
 // App Routes Component
 const AppRoutes = () => {
-  const { isAuthenticated, userRole } = useAuth();
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+  const userRole = useSelector(state => state.auth.role);
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <Navigation />
       <main className="flex-grow">
         <Routes>
           {/* Public Routes */}
@@ -80,6 +95,16 @@ const AppRoutes = () => {
             }
           />
 
+          {/* Profile Route - Accessible to all authenticated users */}
+          <Route
+            path="/profile/:id"
+            element={
+              <ProtectedRoute allowedRoles={['company', 'employee', 'teamLeader']}>
+                <ProfileWrapper />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Default Route */}
           <Route
             path="/"
@@ -102,11 +127,9 @@ const AppRoutes = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <Router>
+      <AppRoutes />
+    </Router>
   );
 }
 
