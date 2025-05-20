@@ -34,15 +34,20 @@ export const companyHome = async (companyId) => {
                     model: 'Employee'
                 })
                 .lean()
-                .then(teams => teams.map(team => ({
-                    ...team,
-                    members: team.members?.map(member => ({
-                        _id: member._id,
-                        firstName: member.firstName,
-                        lastName: member.lastName,
-                        isTeamLeader: member.authorization === 'teamleader'
-                    })) || []
-                }))),
+            .then(teams => teams.map(team => ({
+                ...team,
+                members: team.members?.map(member => ({
+                    _id: member._id,
+                    firstName: member.firstName,
+                    lastName: member.lastName,
+                    isTeamLeader: member.authorization === 'teamleader'
+                })) || [],
+                teamLeaders: team.members?.filter(member => member.authorization === 'teamleader').map(leader => ({
+                    _id: leader._id,
+                    firstName: leader.firstName,
+                    lastName: leader.lastName
+                })) || []
+            }))),
             employeeModel.find({ company: companyId }),
             crIssueModel.find({ company: companyId })
         ]);
@@ -76,8 +81,8 @@ export const getProfile = async (companyId) => {
         if (!company) {
             throw new genericError.NotFoundError('Company not found');
         }
-
         return company;
+    
     } catch (error) {
         console.error('Error in getProfile:', error);
         throw error;

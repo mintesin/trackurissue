@@ -375,6 +375,11 @@ export const registerEmployee = async (employeeData) => {
 
         await employee.save();  // Password will be hashed here by the pre-save middleware
 
+        // Update the team's members array to include this employee
+        await Team.findByIdAndUpdate(employeeData.teamId, {
+            $addToSet: { members: employee._id }
+        });
+
         // Populate team information before returning
         const populatedEmployee = await Employee.findById(employee._id)
             .populate('team')

@@ -25,7 +25,7 @@ export const issuelist = asynchandler(async(req, res, next) => {
 export const issueCreateGet = asynchandler(async(req, res, next) => {
     try {
         const createFields = createdIssueService.createIssueGet();
-        res.status(200).json(createFields);
+        res.status(200).json({ data: createFields });
     } catch (err) {
         next(err);
     }
