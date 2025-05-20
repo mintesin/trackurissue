@@ -73,7 +73,7 @@ export const teamHome = async (teamId) => {
 
     // Remove the separate teamLeaders array since it's now merged with members
     delete transformedTeam.teamLeaders;
-
+    console.log(transformedTeam)
     return {
       team: transformedTeam,
       issues: assignedIssuesData

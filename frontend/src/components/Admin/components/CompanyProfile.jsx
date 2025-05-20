@@ -19,7 +19,7 @@
 import React, { useState, useEffect } from 'react';
 import { companyAPI } from '../../../services/api';
 
-const CompanyProfile = ({ companyId }) => {
+const CompanyProfile = () => {
     const [profile, setProfile] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
@@ -27,14 +27,19 @@ const CompanyProfile = ({ companyId }) => {
 
     useEffect(() => {
         fetchProfile();
-    }, [companyId]);
+    }, []);
 
     const fetchProfile = async () => {
         try {
-            const profileData = await companyAPI.getProfile();
+            console.log('Fetching profile...');
+            const response = await companyAPI.getProfile();
+            console.log('Raw API response:', response);
+            const profileData = response.data;
+          
             setProfile(profileData);
             setFormData(profileData);
         } catch (err) {
+            console.error('Error fetching profile:', err);
             setError(err.response?.data?.message || 'Failed to fetch profile');
         }
     };
@@ -49,8 +54,8 @@ const CompanyProfile = ({ companyId }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const updatedProfile = await companyAPI.updateProfile(formData);
-            setProfile(updatedProfile);
+            const response = await companyAPI.updateProfile(formData);
+            setProfile(response.data);
             setIsEditing(false);
             setError(null);
         } catch (err) {
@@ -69,6 +74,7 @@ const CompanyProfile = ({ companyId }) => {
     }
 
     if (!profile) {
+        console.log('Profile is null, showing loading state');
         return (
             <div className="min-h-screen bg-gray-900">
                 <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -77,6 +83,8 @@ const CompanyProfile = ({ companyId }) => {
             </div>
         );
     }
+
+    console.log('Rendering profile:', profile);
 
     return (
         <div className="min-h-screen bg-gray-900">

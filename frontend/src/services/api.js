@@ -109,6 +109,12 @@ export const companyAPI = {
   // Employee management
   registerEmployee: (employeeData) => api.post('/admin/employee/register', employeeData),
   deregisterEmployee: (employeeId) => api.delete(`/admin/employee/${employeeId}`),
+  
+  // Issue management
+  getIssueFields: () => api.get('/admin/issues/create'),
+  createIssue: (issueData) => api.post('/admin/issues', issueData),
+  getIssue: (issueId) => api.get(`/admin/issues/${issueId}`),
+  assignIssue: (issueId, assigneeId) => api.post(`/admin/issues/${issueId}/assign`, { assigneeId }),
 };
 
 // Employee API calls
