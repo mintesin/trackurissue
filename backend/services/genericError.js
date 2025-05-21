@@ -71,3 +71,12 @@ export class ConflictError extends Error {
         this.isOperational = true;
     }
 }
+
+export class NotSuccessful extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "NotSuccessful";
+        this.statusCode = 500;
+        this.isOperational = true;
+    }
+}

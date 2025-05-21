@@ -76,18 +76,39 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
   useEffect(() => {
     if (!chatRoomId) return;
 
+    console.log('Setting up message subscription for room:', chatRoomId);
+
     const unsubscribeMessage = subscribe('message', (data) => {
+      console.log('Message received in TeamChatRoom:', data);
+      console.log('Current chatRoomId:', chatRoomId);
+      console.log('Message roomId:', data.roomId);
+      
       if (data.roomId === chatRoomId) {
+        console.log('Message is for current room');
         setMessages(prev => {
+          console.log('Previous messages:', prev);
+          console.log('New message to add:', data.message);
+          
+          // Ensure we have all required fields
+          if (!data.message || !data.message._id || !data.message.content || !data.message.sender) {
+            console.error('Invalid message format:', data.message);
+            return prev;
+          }
+
           const exists = prev.some(msg => msg._id === data.message._id);
           if (!exists) {
-            return [...prev, data.message].sort((a, b) => 
+            const newMessages = [...prev, data.message].sort((a, b) => 
               new Date(a.timestamp) - new Date(b.timestamp)
             );
+            console.log('Updated messages array:', newMessages);
+            return newMessages;
           }
+          console.log('Message already exists, not adding');
           return prev;
         });
         chatAPI.markAsRead(chatRoomId).catch(console.error);
+      } else {
+        console.log('Message is for different room, ignoring');
       }
     });
 
@@ -113,26 +134,35 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
       }
     });
 
+    // Cleanup function for both subscriptions
     return () => {
+      console.log('Cleaning up subscriptions for room:', chatRoomId);
       unsubscribeMessage();
       unsubscribeTyping();
     };
   }, [chatRoomId, subscribe, user?._id]);
 
-  // Scroll to bottom on new messages, but only if we're near the bottom already
-  useEffect(() => {
-    // Use RAF to ensure DOM has updated
+  const scrollToBottom = useCallback((smooth = true) => {
     requestAnimationFrame(() => {
       if (!chatContainerRef.current || !messagesEndRef.current) return;
-      
-      const container = chatContainerRef.current;
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-      
-      if (isNearBottom) {
-        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'end'
+      });
     });
-  }, [messages]);
+  }, []);
+
+  // Always scroll to bottom on new messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages, scrollToBottom]);
+
+  // Initial scroll to bottom
+  useEffect(() => {
+    scrollToBottom(false);
+  }, []); // Only run once on mount
 
   const fetchMessages = useCallback(async (pageNum = 1) => {
     if (!chatRoomId) return;
@@ -141,11 +171,10 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
       setLoading(true);
       const response = await chatAPI.getChatRoom(chatRoomId, pageNum);
       
-      if (pageNum === 1) {
-        setMessages(response.data.messages);
-      } else {
-        setMessages(prev => [...response.data.messages, ...prev]);
-      }
+      const newMessages = response.data.messages;
+      setMessages(prev => 
+        pageNum === 1 ? newMessages : [...prev, ...newMessages]
+      );
       
       setHasMore(response.data.hasMore);
       setPage(pageNum);
@@ -159,12 +188,31 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
     }
   }, [chatRoomId]);
 
-  const handleScroll = useCallback(() => {
-    const { scrollTop } = chatContainerRef.current;
-    if (scrollTop === 0 && hasMore && !loading) {
-      fetchMessages(page + 1);
+  const scrollTimeoutRef = useRef(null);
+
+  const handleScroll = useCallback((e) => {
+    const container = e.target;
+    // Add a small threshold to trigger loading before reaching absolute top
+    if (container.scrollTop <= 50 && hasMore && !loading) {
+      // Debounce scroll events
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = setTimeout(() => {
+        console.log('Near top, loading more messages...');
+        fetchMessages(page + 1);
+      }, 100);
     }
   }, [hasMore, loading, page, fetchMessages]);
+
+  // Cleanup scroll timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleTyping = useCallback(() => {
     if (typingTimeoutRef.current) {
@@ -184,34 +232,16 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
       const messageContent = message.trim();
       setMessage(''); // Clear input immediately for better UX
       
-      // Create temporary message for immediate display
-      const tempMessage = {
-        _id: `temp-${Date.now()}`,
-        content: messageContent,
-        sender: {
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName
-        },
-        timestamp: new Date().toISOString()
-      };
-      
-      // Add temporary message
-      setMessages(prev => [...prev, tempMessage]);
-      
-      // Send via WebSocket for real-time update
+      // Send via WebSocket only - server will handle broadcasting and persistence
       const sent = sendWsMessage(messageContent);
       if (!sent) {
         throw new Error('Failed to send message');
       }
       
-      // Also send via REST API for persistence
-      await chatAPI.sendMessage(chatRoomId, messageContent);
       setError(null);
     } catch (err) {
       setError(err.message || 'Failed to send message');
-      // Remove the temporary message if sending failed
-      setMessages(prev => prev.filter(msg => !msg._id.startsWith('temp-')));
+      // No need to handle temporary message removal since we're not using optimistic updates
     }
   };
 
@@ -227,8 +257,16 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
     );
   }
 
+  const handleRetry = useCallback(() => {
+    setError(null);
+    fetchMessages(1);
+  }, [fetchMessages]);
+
   if (error || wsError) {
-    return <ChatError error={error || wsError} />;
+    return <ChatError 
+      error={error || wsError} 
+      onRetry={handleRetry}
+    />;
   }
 
   return (
@@ -239,10 +277,11 @@ const TeamChatRoom = ({ teamId, chatRoomId, isLoading, onParticipantsChange }) =
         userId={user?._id} 
         loading={loading} 
         page={page} 
-        hasMore={hasMore} 
-        onScroll={handleScroll} 
+        hasMore={hasMore}
         typingUsers={typingUsers}
         ref={chatContainerRef}
+        className="flex-1 bg-gray-700 p-4 overflow-y-auto"
+        onScroll={handleScroll}
       />
       <ChatInput 
         message={message} 

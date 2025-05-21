@@ -55,18 +55,28 @@ export const getAssignedIssues = async (teamId) => {
 export const getSolveIssueData = async (issueId) => {
     try {
         const issue = await assignedIssueModel.findById(issueId)
-            .populate('issue')
-            .populate('assignee');
+            .populate({
+                path: 'issue',
+                select: 'topic description urgency status createdAt company',
+                model: 'createdIssue'
+            })
+            .populate({
+                path: 'assignee',
+                select: 'firstName lastName email',
+                model: 'Employee'
+            });
             
         if (!issue) {
             throw new Error('Assigned issue not found');
         }
 
         return {
-            issueDetails: issue,
-            solutionFields: {
-                solution: '',
-                additionalNotes: ''
+            issueDetails: {
+                ...issue.toObject(),
+                solutionFields: {
+                    solution: '',
+                    additionalNotes: ''
+                }
             }
         };
     } catch (error) {
@@ -87,7 +97,21 @@ export const solveIssue = async (issueId, solution, additionalNotes) => {
         const updatedAssignedIssue = await assignedIssueModel.findByIdAndUpdate(
             issueId,
             { status: 'solved' },
-            { new: true }
+            { 
+                new: true,
+                populate: [
+                    {
+                        path: 'issue',
+                        select: 'topic description urgency status createdAt company',
+                        model: 'createdIssue'
+                    },
+                    {
+                        path: 'assignee',
+                        select: 'firstName lastName email',
+                        model: 'Employee'
+                    }
+                ]
+            }
         );
 
         // Update original issue with solution

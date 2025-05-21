@@ -8,6 +8,9 @@ import CreateTeamModal from './components/CreateTeamModal';
 import AddEmployeeModal from './components/AddEmployeeModal';
 import CreateIssueModal from './components/CreateIssueModal';
 import CreatedIssuesGrid from './components/CreatedIssuesGrid';
+import Pagination from '../common/Pagination';
+
+const ITEMS_PER_PAGE = 5;
 
 const CompanyDashboard = () => {
   // Main data states
@@ -17,6 +20,7 @@ const CompanyDashboard = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [showTeams, setShowTeams] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Modal visibility states
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
@@ -32,7 +36,7 @@ const CompanyDashboard = () => {
   // Function to show success message
   const showSuccess = (message) => {
     setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(null), 5000); // Reduced timeout to 5 seconds for better UX
+    setTimeout(() => setSuccessMessage(null), 5000);
   };
 
   // Fetch dashboard data on component mount
@@ -43,7 +47,6 @@ const CompanyDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const response = await companyAPI.getDashboard();
-      console.log('Dashboard response:', response.data);
       
       const transformedTeams = response.data.teams.map(team => ({
         ...team,
@@ -52,8 +55,6 @@ const CompanyDashboard = () => {
           isTeamLeader: member.authorization === 'teamleader'
         })) || []
       }));
-      
-      console.log('Available employees:', response.data.employees);
       
       setTeams(transformedTeams);
       setEmployees(response.data.employees);
@@ -67,9 +68,7 @@ const CompanyDashboard = () => {
 
   const handleCreateTeam = async (newTeam) => {
     try {
-      console.log('Received team data from modal:', newTeam);
-      
-      if (!newTeam.teamLeaders || newTeam.teamLeaders.length === 0) {
+      if (!newTeam.teamLeaders?.length) {
         showError('Please select at least one team leader');
         return;
       }
@@ -92,8 +91,6 @@ const CompanyDashboard = () => {
         company: company._id
       };
 
-      console.log('Submitting team creation with validated data:', teamData);
-
       await companyAPI.createTeam(teamData);
       setIsCreateTeamModalOpen(false);
       showSuccess('Team created successfully');
@@ -113,21 +110,17 @@ const CompanyDashboard = () => {
         return;
       }
 
-      // Map form fields to match backend expectations
       const employeeData = {
         ...newEmployee,
-        employeeEmail: newEmployee.email,  // Map email to employeeEmail
-        birthDate: newEmployee.birthDate || new Date().toISOString().split('T')[0]  // Ensure birthDate is provided
+        employeeEmail: newEmployee.email,
+        birthDate: newEmployee.birthDate || new Date().toISOString().split('T')[0]
       };
       
       const response = await companyAPI.registerEmployee(employeeData);
       setIsAddEmployeeModalOpen(false);
       
-      console.log('Frontend - Generated Password:', response.data?.generatedPassword);
-      
-      if (response.data && response.data.generatedPassword) {
-        // Show success message with the generated password
-        showSuccess(`Employee added successfully! Please securely share these credentials with the employee:
+      if (response.data?.generatedPassword) {
+        showSuccess(`Employee added successfully! Please securely share these credentials:
         Email: ${newEmployee.email}
         Password: ${response.data.generatedPassword}
         
@@ -166,6 +159,17 @@ const CompanyDashboard = () => {
     }
   };
 
+  // Calculate pagination for issues
+  const totalPages = Math.ceil(issues.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentIssues = issues.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-gray-900">
       <div className="container mx-auto px-4 py-8">
@@ -192,7 +196,25 @@ const CompanyDashboard = () => {
         <div className="flex flex-col md:flex-row gap-8 mt-8">
           {/* Left Section - Issues */}
           <div className="md:w-2/3">
-            <CreatedIssuesGrid issues={issues} />
+            <CreatedIssuesGrid 
+              issues={currentIssues} 
+              onDeleteIssue={async (issueId) => {
+                try {
+                  await companyAPI.deleteIssue(issueId);
+                  showSuccess('Issue deleted successfully');
+                  fetchDashboardData();
+                } catch (error) {
+                  showError(error.message || 'Failed to delete issue');
+                }
+              }}
+            />
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            )}
           </div>
 
           {/* Right Sidebar - Teams/Employees */}
@@ -232,7 +254,7 @@ const CompanyDashboard = () => {
           isOpen={isCreateTeamModalOpen}
           onClose={() => setIsCreateTeamModalOpen(false)}
           onSubmit={handleCreateTeam}
-          employees={employees} // Show all employees since they can be in multiple teams
+          employees={employees}
         />
 
         <CreateIssueModal

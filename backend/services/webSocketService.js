@@ -212,25 +212,37 @@ class WebSocketService {
                 return;
             }
 
-            console.log(`Room ${data.roomId} has ${room.size} members:`, Array.from(room));
-            
+            // Create message object with consistent format
+            const messageData = {
+                _id: new Date().getTime().toString(),
+                content: data.message,
+                sender: {
+                    _id: ws.userId,
+                    firstName: ws.firstName || 'User',
+                    lastName: ws.lastName || ws.userId.substring(0, 5)
+                },
+                timestamp: new Date().toISOString()
+            };
+
             const message = {
                 type: 'message',
                 roomId: data.roomId,
-                message: {
-                    _id: new Date().getTime().toString(),
-                    content: data.message,
-                    sender: {
-                        _id: ws.userId,
-                        firstName: ws.firstName || 'User',
-                        lastName: ws.lastName || ws.userId.substring(0, 5)
-                    },
-                    timestamp: data.timestamp || new Date().toISOString()
-                }
+                message: messageData
             };
 
-            console.log(`Broadcasting message in room ${data.roomId} from user ${ws.userId}:`, message);
+            // Broadcast message IMMEDIATELY to all clients in the room
+            console.log('Broadcasting message:', message);
             this.broadcastToRoom(data.roomId, message);
+
+            // Then attempt to save to database asynchronously
+            try {
+                // Note: Add your database save logic here
+                // This runs after broadcasting, so it won't delay real-time updates
+                console.log('Message broadcast complete, saving to database...');
+            } catch (dbError) {
+                console.error('Error saving message to database:', dbError);
+                // Don't throw error since message was already broadcast successfully
+            }
         } catch (error) {
             console.error('Error handling message:', error);
             ws.send(JSON.stringify({
@@ -308,7 +320,7 @@ class WebSocketService {
             // Get all connected clients for this room
             const clients = Array.from(room)
                 .map(userId => this.clients.get(userId))
-                .filter(ws => ws && ws.readyState === WebSocketServer.OPEN && !excludeUsers.includes(ws.userId));
+                .filter(ws => ws && ws.readyState === 1 && !excludeUsers.includes(ws.userId)); // WebSocket.OPEN is 1
 
             // Broadcast message to all connected clients
             const messageStr = JSON.stringify(message);

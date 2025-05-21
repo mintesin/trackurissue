@@ -147,19 +147,25 @@ export const editedIssuePost = async (issueId, updatedData) => {
             throw new Error('Invalid issue ID format');
         }
 
-        updatedData.status = "edited";
+        // Don't override status if it's being solved
+        if (!updatedData.status || updatedData.status !== 'solved') {
+            updatedData.status = "edited";
+        }
         
         const updatedIssue = await crIssueModel.findByIdAndUpdate(
             issueId,
             updatedData,
-            { new: true }
+            { 
+                new: true,
+                select: 'topic description urgency status solution additionalNotes solvedAt'
+            }
         );
 
         if (!updatedIssue) {
             throw new Error("Issue not found");
         }
 
-        return sanitizeIssueData(updatedIssue.toObject());
+        return updatedIssue.toObject();
     }
     catch (err) {
         throw new genericError.OperationError(err.message || "Failed to update issue");
@@ -167,18 +173,59 @@ export const editedIssuePost = async (issueId, updatedData) => {
 }
 
 /**
- * Deletes an issue
+ * Updates an issue with solution details
+ * @param {string} issueId - The ID of the issue to update
+ * @param {Object} data - The solution data
+ * @returns {Promise<Object>} Returns the updated issue
  */
-export const deleteIssuePost = async (issueId) => {
+export const updateIssue = async (issueId, data) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(issueId)) {
             throw new Error('Invalid issue ID format');
         }
 
+        const updatedIssue = await crIssueModel.findByIdAndUpdate(
+            issueId,
+            {
+                ...data,
+                status: 'solved',
+                solvedAt: new Date()
+            },
+            { 
+                new: true,
+                select: 'topic description urgency status solution additionalNotes solvedAt'
+            }
+        );
+
+        if (!updatedIssue) {
+            throw new Error("Issue not found");
+        }
+
+        return updatedIssue.toObject();
+    }
+    catch (err) {
+        throw new genericError.OperationError(err.message || "Failed to update issue with solution");
+    }
+}
+
+/**
+ * Deletes an issue
+ */
+export const deleteIssue = async (issueId) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(issueId)) {
+            throw new Error('Invalid issue ID format');
+        }
+
+        // Delete any assigned issues first
+        await assignedIssueModel.deleteMany({ issue: issueId });
+
+        // Then delete the created issue
         const deletedIssue = await crIssueModel.findByIdAndDelete(issueId);
-        if(!deletedIssue) {
+        if (!deletedIssue) {
             throw new genericError.NotFoundError("Issue not found");
         }
+
         return sanitizeIssueData(deletedIssue.toObject());
     }
     catch(err) {

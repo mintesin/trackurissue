@@ -19,6 +19,7 @@ import AssignIssue from './components/Admin/components/AssignIssue';
 import EditIssue from './components/Admin/components/EditIssue';
 import EmployeeProfile from './components/Employee/EmployeeProfile';
 import CompanyProfile from './components/Admin/components/CompanyProfile';
+import AssignedIssueSolve from './components/Dashboard/components/AssignedIssueSolve';
 
 // Layout Components
 import Navigation from './components/Common/Navigation';
@@ -33,6 +34,10 @@ import Documentation from './components/Common/Documentation';
 // Dashboard Components
 import CompanyDashboard from './components/Admin/CompanyDashboard';
 import TeamDashboard from './components/Dashboard/TeamDashboard';
+
+// Legal Components
+import PrivacyPolicy from './components/Common/PrivacyPolicy';
+import TermsOfService from './components/Common/TermsOfService';
 
 // Wrapper component for Profile to handle URL parameters
 const ProfileWrapper = () => {
@@ -104,6 +109,8 @@ const AppRoutes = () => {
           <Route path="/register" element={<CompanyRegister />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/documentation" element={<Documentation />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
 
           {/* Protected Admin Routes */}
           <Route
@@ -127,6 +134,7 @@ const AppRoutes = () => {
               <ProtectedRoute allowedRoles={['employee', 'teamLeader']}>
                 <Routes>
                   <Route path="dashboard" element={<TeamDashboard />} />
+                  <Route path="assigned-issues/:id/solve" element={<AssignedIssueSolve />} />
                 </Routes>
               </ProtectedRoute>
             }

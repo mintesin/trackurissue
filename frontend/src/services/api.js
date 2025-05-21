@@ -114,7 +114,9 @@ export const companyAPI = {
   getIssueFields: () => api.get('/admin/issues/create'),
   createIssue: (issueData) => api.post('/admin/issues', issueData),
   getIssue: (issueId) => api.get(`/admin/issues/${issueId}`),
+  deleteIssue: (issueId) => api.delete(`/admin/issues/${issueId}`),
   assignIssue: (issueId, assigneeId) => api.post(`/admin/issues/${issueId}/assign`, { assigneeId }),
+  updateIssue: (issueId, issueData) => api.put(`/admin/issues/${issueId}`, issueData),
 };
 
 // Employee API calls
