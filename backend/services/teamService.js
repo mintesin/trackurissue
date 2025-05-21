@@ -84,7 +84,7 @@ export const teamHome = async (teamId) => {
         err instanceof genericError.BadRequestError) {
       throw err;
     }
-    throw new genericError.NotSuccessFul("Fetching team data failed: " + err.message);
+    throw new genericError.NotSuccessful("Fetching team data failed: " + err.message);
   }
 };
 

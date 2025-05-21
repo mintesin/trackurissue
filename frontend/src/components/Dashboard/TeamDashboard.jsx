@@ -3,21 +3,6 @@
  * 
  * This component serves as the main dashboard for team members, providing a comprehensive
  * view of team activities, assigned issues, and communication features.
- * 
- * Features:
- * - Team information display with leader and member count
- * - List of team members with their roles
- * - Assigned issues tracking and management
- * - Real-time team chat room integration
- * - Loading states with skeleton screens
- * - Error handling and retry functionality
- * - Responsive layout for different screen sizes
- * 
- * Technical Details:
- * - Uses Redux for user state management
- * - Integrates with WebSocket for real-time chat
- * - Implements error boundaries for fault tolerance
- * - Handles asynchronous data loading with proper error states
  */
 
 import React, { useState, useEffect } from 'react';
@@ -28,7 +13,10 @@ import TeamMembers from './components/TeamMembers';
 import TeamIssues from './components/TeamIssues';
 import TeamChatRoom from './components/TeamChatRoom';
 import ErrorBoundary from '../Common/ErrorBoundary';
+import Pagination from '../common/Pagination';
 import { TeamHeaderSkeleton, TeamMembersSkeleton, TeamIssuesSkeleton, TeamChatRoomSkeleton } from './components/Skeletons';
+
+const ITEMS_PER_PAGE = 5;
 
 const TeamDashboard = () => {
   const [teamData, setTeamData] = useState(null);
@@ -36,6 +24,7 @@ const TeamDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chatRoom, setChatRoom] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const user = useSelector(state => state.auth.user);
 
   useEffect(() => {
@@ -45,36 +34,27 @@ const TeamDashboard = () => {
           throw new Error('No team assigned');
         }
 
-        console.log('Fetching team data for:', user.team);
-
-        // Get team dashboard data
         const response = await teamAPI.getDashboard(user.team);
-        console.log('Team dashboard response:', response);
         
         if (!response?.data?.team?._id) {
           throw new Error('Invalid team data received');
         }
 
         const teamData = response.data;
-        console.log('Setting team data:', teamData);
         setTeamData(teamData);
         
-        // Set assigned issues from the response
         const issues = teamData.issues || [];
-        console.log('Setting issues:', issues);
         setAssignedIssues(issues);
 
         // Initialize chat room
         const initializeChatRoom = async () => {
           try {
             const teamMembers = teamData.team.members;
-            console.log('Team members for chat room:', teamMembers);
             
             const createResponse = await chatAPI.createChatRoom(
               teamData.team._id,
               teamMembers.map(member => member._id)
             );
-            console.log('Chat room created/retrieved:', createResponse);
             
             if (!createResponse?.data?._id) {
               console.error('Chat room creation response missing _id:', createResponse);
@@ -83,7 +63,6 @@ const TeamDashboard = () => {
             }
             
             const chatRoomResponse = await chatAPI.getChatRoom(createResponse.data._id);
-            console.log('Chat room details:', chatRoomResponse);
             if (!chatRoomResponse?.data?._id) {
               console.error('Chat room details response missing _id:', chatRoomResponse);
               setChatRoom(null);
@@ -108,6 +87,17 @@ const TeamDashboard = () => {
 
     fetchData();
   }, [user]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(assignedIssues.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentIssues = assignedIssues.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (loading) {
     return (
@@ -155,14 +145,11 @@ const TeamDashboard = () => {
           <TeamHeader 
             teamName={teamData.team.teamName}
             teamLead={(() => {
-              // Find all team leaders
               const leaders = teamData.team.members?.filter(m => m.isTeamLeader) || [];
               if (leaders.length > 0) {
-                // If multiple leaders, show the first one with indication
                 const displayName = `${leaders[0].firstName} ${leaders[0].lastName}`;
                 return leaders.length > 1 ? `${displayName} +${leaders.length - 1}` : displayName;
               }
-              console.warn('No team leader found for team:', teamData.team.teamName);
               return 'Not Assigned';
             })()}
             memberCount={teamData.team.members?.length || 0}
@@ -174,15 +161,28 @@ const TeamDashboard = () => {
                 Assigned Issues ({assignedIssues.length})
               </h2>
               {assignedIssues.length > 0 ? (
-                <TeamIssues issues={assignedIssues.map(assignedIssue => ({
-                  _id: assignedIssue._id,
-                  topic: assignedIssue.issue?.topic || 'No Topic',
-                  description: assignedIssue.issue?.description || 'No Description',
-                  urgency: assignedIssue.issue?.urgency || 'normal',
-                  status: assignedIssue.status || 'pending',
-                  assignedAt: assignedIssue.assignedAt,
-                  assignee: assignedIssue.assignee || { firstName: 'Unassigned', lastName: '' }
-                }))} />
+                <>
+                  <TeamIssues 
+                    issues={currentIssues.map(assignedIssue => ({
+                      _id: assignedIssue._id,
+                      topic: assignedIssue.issue?.topic || 'No Topic',
+                      description: assignedIssue.issue?.description || 'No Description',
+                      urgency: assignedIssue.issue?.urgency || 'normal',
+                      status: assignedIssue.status || 'pending',
+                      assignedAt: assignedIssue.assignedAt,
+                      assignee: assignedIssue.assignee || { firstName: 'Unassigned', lastName: '' }
+                    }))} 
+                  />
+                  {totalPages > 1 && (
+                    <div className="mt-4">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                      />
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-gray-400 text-center py-4">
                   No issues assigned to team

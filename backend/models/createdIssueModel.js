@@ -40,7 +40,20 @@ const crIssueSchema = new Schema({
 	},
 	company: {
 		type:Schema.Types.ObjectId, 
-		required:true}
+		required:true
+	},
+	solution: {
+		type: String,
+		default: ''
+	},
+	additionalNotes: {
+		type: String,
+		default: ''
+	},
+	solvedAt: {
+		type: Date,
+		default: null
+	}
 })
 
 const crIssueModel = mongoose.model('createdIssue',crIssueSchema)

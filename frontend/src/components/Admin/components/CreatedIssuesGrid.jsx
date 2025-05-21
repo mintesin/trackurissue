@@ -1,7 +1,7 @@
 import React from 'react';
 import CreatedIssueCard from './CreatedIssueCard';
 
-const CreatedIssuesGrid = ({ issues }) => {
+const CreatedIssuesGrid = ({ issues, onDeleteIssue }) => {
     // Sort issues by creation date (newest first) and urgency
     const sortedIssues = [...issues].sort((a, b) => {
         // First sort by urgency (urgent first)
@@ -37,7 +37,11 @@ const CreatedIssuesGrid = ({ issues }) => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {sortedIssues.map((issue) => (
-                        <CreatedIssueCard key={issue._id} issue={issue} />
+                        <CreatedIssueCard 
+                            key={issue._id} 
+                            issue={issue} 
+                            onDelete={onDeleteIssue}
+                        />
                     ))}
                 </div>
             )}

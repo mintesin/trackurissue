@@ -6,11 +6,11 @@ const Footer = () => {
   return (
     <footer className="bg-gray-800 text-white">
       <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
           <div>
             <p className="text-sm">© 2024 Issue Tracker. All rights reserved.</p>
           </div>
-          <div className="flex space-x-6">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             <a
               href="#"
               className="text-gray-300 hover:text-white text-sm"
@@ -20,6 +20,26 @@ const Footer = () => {
               }}
             >
               Help & Documentation
+            </a>
+            <a
+              href="#"
+              className="text-gray-300 hover:text-white text-sm"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/privacy');
+              }}
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="#"
+              className="text-gray-300 hover:text-white text-sm"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/terms');
+              }}
+            >
+              Terms of Service
             </a>
             <a
               href="#"

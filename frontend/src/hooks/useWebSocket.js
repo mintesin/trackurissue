@@ -23,7 +23,9 @@ const useWebSocket = (roomId) => {
 
       try {
         // Use the same host as the API but with ws:// protocol
-        const wsUrl = `ws://${window.location.hostname}:3000/ws`;
+        // Use wss:// for HTTPS, ws:// for HTTP
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.hostname}:3000/ws`;
         console.log('Connecting to WebSocket:', wsUrl);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
@@ -91,15 +93,20 @@ const useWebSocket = (roomId) => {
             default:
                 // Handle other message types using subscribers
                 const subscribers = subscribersRef.current.get(data.type) || [];
+                console.log(`Found ${subscribers.length} subscribers for message type ${data.type}`);
+                console.log('Message data:', data);
+                
                 if (subscribers.length > 0) {
-                    console.log(`Dispatching ${data.type} to ${subscribers.length} subscribers:`, data);
                     subscribers.forEach(callback => {
                         try {
+                            console.log('Calling subscriber callback with data:', data);
                             callback(data);
                         } catch (err) {
                             console.error('Error in subscriber callback:', err);
                         }
                     });
+                } else {
+                    console.warn(`No subscribers found for message type: ${data.type}`);
                 }
             }
           } catch (err) {

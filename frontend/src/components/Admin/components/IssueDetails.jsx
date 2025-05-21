@@ -8,6 +8,7 @@ const IssueDetails = () => {
     const [issue, setIssue] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         const fetchIssue = async () => {
@@ -113,6 +114,27 @@ const IssueDetails = () => {
                         className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                     >
                         Assign Issue
+                    </button>
+                    <button
+                        onClick={async () => {
+                            if (window.confirm('Are you sure you want to delete this issue? This action cannot be undone.')) {
+                                try {
+                                    setDeleting(true);
+                                    await companyAPI.deleteIssue(issueId);
+                                    navigate('/admin/dashboard', { 
+                                        replace: true,
+                                        state: { message: 'Issue deleted successfully' }
+                                    });
+                                } catch (err) {
+                                    setError(err.message || 'Failed to delete issue');
+                                    setDeleting(false);
+                                }
+                            }
+                        }}
+                        disabled={deleting}
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                    >
+                        {deleting ? 'Deleting...' : 'Delete Issue'}
                     </button>
                 </div>
             </div>
