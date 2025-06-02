@@ -6,6 +6,7 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
+    favoriteWord: '',
     userType: 'employee' // or 'company'
   });
   const [status, setStatus] = useState({ message: '', isError: false });
@@ -27,7 +28,11 @@ const ResetPassword = () => {
         ? authAPI.employeeReset 
         : authAPI.companyReset;
 
-      await resetFunction(formData.email);
+      const resetData = formData.userType === 'employee' 
+        ? { employeeEmail: formData.email, favoriteWord: formData.favoriteWord }
+        : { email: formData.email };
+
+      await resetFunction(resetData);
       
       setIsSubmitted(true);
       setStatus({
@@ -43,13 +48,13 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl text-white font-extrabold">
             Reset your password
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-white">
             Enter your email address and we'll send you instructions to reset your password.
           </p>
         </div>
@@ -83,7 +88,7 @@ const ResetPassword = () => {
                   onChange={handleChange}
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                 />
-                <label htmlFor="employee" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="employee" className="ml-2 block text-sm text-white">
                   Employee
                 </label>
               </div>
@@ -97,11 +102,26 @@ const ResetPassword = () => {
                   onChange={handleChange}
                   className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
                 />
-                <label htmlFor="company" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="company" className="ml-2 block text-sm text-white">
                   Company Admin
                 </label>
               </div>
             </div>
+            {formData.userType === 'employee' && (
+              <div className="mt-4">
+                <label htmlFor="favoriteWord" className="sr-only">Security Word</label>
+                <input
+                  id="favoriteWord"
+                  name="favoriteWord"
+                  type="text"
+                  required
+                  className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Security Word"
+                  value={formData.favoriteWord}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
 
             {status.message && (
               <div className={`text-sm text-center ${status.isError ? 'text-red-500' : 'text-green-500'}`}>

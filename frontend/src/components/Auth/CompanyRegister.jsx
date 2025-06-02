@@ -39,11 +39,9 @@ const CompanyRegister = () => {
     setError(null);
     
     try {
-      const { data } = await authAPI.companyRegister(formData);
-      // Store the token
-      localStorage.setItem('token', data.token);
-      // Redirect to dashboard with success message
-      navigate('/dashboard', { state: { registrationSuccess: true } });
+      await authAPI.companyRegister(formData);
+      // Redirect to login page with success message
+      navigate('/login', { state: { registrationSuccess: true, message: 'Company registration successful! Please login to continue.' } });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     }
@@ -62,14 +60,14 @@ const CompanyRegister = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black bg-opacity-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center text-white">Loading registration form...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black bg-opacity-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
           Register your Company

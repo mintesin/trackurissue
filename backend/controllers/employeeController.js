@@ -33,9 +33,16 @@ export const resetAccountGet = expressAsyncHandler(async (req, res, next) => {
  * POST /employee/reset
  * Handles password reset
  */
+
+
 export const resetAccountPost = expressAsyncHandler(async (req, res, next) => {
-    const updatedEmployee = await employeeService.employeeResetAccountPost(req.body);
-    res.status(200).json(updatedEmployee);
+    const result = await employeeService.employeeResetAccountPost(req.body);
+    res.status(200).json(result);
+});
+
+export const resetPasswordPost = expressAsyncHandler(async (req, res, next) => {
+    const result = await employeeService.employeeResetPasswordPost(req.body);
+    res.status(200).json(result);
 });
 
 /**

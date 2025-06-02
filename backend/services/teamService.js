@@ -96,7 +96,7 @@ export const getTeamCreationFields = async () => {
     fields: [
       { name: 'teamName', type: 'text', required: true, label: 'Team Name' },
       { name: 'description', type: 'textarea', required: false, label: 'Description' },
-      { name: 'teamLeaders', type: 'select', required: true, label: 'Team Leaders', multiple: true }
+      { name: 'teamLeaders', type: 'select', required: false, label: 'Team Leaders (Optional)', multiple: true, description: 'You can assign team leaders later' }
     ]
   };
 };
@@ -108,8 +108,8 @@ export const teamCreate = async (teamData) => {
   try {
     const { teamName, description, teamLeaders, company } = teamData;
 
-    if (!teamName || !teamLeaders || !teamLeaders.length || !company) {
-      throw new genericError.BadRequestError('Missing required fields');
+    if (!teamName || !company) {
+      throw new genericError.BadRequestError('Team name and company are required');
     }
 
     const existingTeam = await teamModel.findOne({ teamName, company });
@@ -117,21 +117,24 @@ export const teamCreate = async (teamData) => {
       throw new genericError.ConflictError('Team name already exists for this company');
     }
 
+    // Create team with or without leaders
     const newTeam = await teamModel.create({
       teamName,
       description,
       company,
-      teamLeaders,
-      members: [...new Set(teamLeaders)]
+      teamLeaders: teamLeaders || [],
+      members: teamLeaders ? [...new Set(teamLeaders)] : []
     });
 
-    // Update team leaders' roles
-    await Promise.all(teamLeaders.map(async leaderId => {
-      await employeeModel.findByIdAndUpdate(leaderId, {
-        authorization: 'teamleader',
-        $addToSet: { teams: newTeam._id, leadingTeams: newTeam._id }
-      });
-    }));
+    // Update team leaders' roles if any are assigned
+    if (teamLeaders && teamLeaders.length > 0) {
+      await Promise.all(teamLeaders.map(async leaderId => {
+        await employeeModel.findByIdAndUpdate(leaderId, {
+          authorization: 'teamleader',
+          $addToSet: { teams: newTeam._id, leadingTeams: newTeam._id }
+        });
+      }));
+    }
 
     return newTeam;
   } catch (err) {
