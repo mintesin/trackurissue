@@ -16,6 +16,7 @@ import employeeModel from '../models/employeeModel.js';
 import crIssueModel from '../models/createdIssueModel.js';
 import * as genericError from './genericError.js';
 import validator from 'validator';
+import { sendEmail } from '../config/nodeMailer.js';
 
 /**
  * Get company dashboard data
@@ -64,6 +65,75 @@ export const companyHome = async (companyId) => {
         };
     } catch (error) {
         console.error('Error in companyHome:', error);
+        throw error;
+    }
+};
+
+export const resetAccountGet = () => {
+    return {
+        fields: [
+            {
+                name: 'adminEmail',
+                label: 'Admin Email',
+                type: 'email',
+                required: true
+            },
+            {
+                name: 'favoriteWord',
+                label: 'Security Word',
+                type: 'text',
+                required: true,
+                description: 'The security word you provided during registration'
+            }
+        ]
+    };
+};
+
+export const resetAccountPost = async (resetData) => {
+    try {
+        const { adminEmail, favoriteWord } = resetData;
+
+        if (!adminEmail || !favoriteWord) {
+            throw new genericError.BadRequestError('Email and security word are required');
+        }
+
+        const company = await companyModel.findOne({ adminEmail });
+
+        if (!company) {
+            throw new genericError.NotFoundError('Company not found');
+        }
+
+        if (company.favoriteWord !== favoriteWord) {
+            throw new genericError.UnauthorizedError('Invalid security word');
+        }
+
+        // Generate new password
+        const newPassword = Math.random().toString(36).slice(-8);
+        company.password = newPassword;
+        await company.save();
+
+        // Send email notification for password reset
+        const emailSubject = 'Company Account Password Reset';
+        const emailText = `Hello ${company.adminName},\n\n` +
+                         `Welcome back to the platform!\n` +
+                         `Your password has been reset for ${company.companyName}.\n` +
+                         `Your new temporary password is: ${newPassword}\n\n` +
+                         `Please log in and change your password as soon as possible.\n\n` +
+                         `Best regards,\nSystem Administration`;
+
+        try {
+            await sendEmail(company.adminEmail, emailSubject, emailText);
+            console.log('Password reset email sent successfully to', company.adminEmail);
+        } catch (emailError) {
+            console.error('Failed to send password reset email:', emailError);
+        }
+
+        return {
+            message: 'Password reset successful',
+            newPassword
+        };
+    } catch (error) {
+        console.error('Error in resetAccountPost:', error);
         throw error;
     }
 };
@@ -349,7 +419,7 @@ export const registerPost = async (companyData) => {
                     : 'Admin email already registered'
             );
         }
-
+    console.log("companyData")
         // 4. Create new company
         const company = await companyModel.create({
             companyName,
@@ -366,11 +436,28 @@ export const registerPost = async (companyData) => {
         });
 
         // 5. Generate JWT token
-        const token = jwt.sign(
-            { id: company._id },
-            process.env.JWT_SECRET || 'your-secret-key',  // Added fallback secret
-            { expiresIn: '24h' }
-        );
+        // const token = jwt.sign(
+        //     { id: company._id },
+        //     process.env.JWT_SECRET || 'your-secret-key',  // Added fallback secret
+        //     { expiresIn: '24h' }
+        // );
+        
+        // Send welcome email to company admin
+        const emailSubject = 'Welcome to Our Platform';
+        const emailText = `Hello ${adminName},\n\n` +
+                         `Welcome to our platform! Your company ${companyName} has been successfully registered.\n\n` +
+                         `Your account details:\n` +
+                         `Email: ${adminEmail}\n` +
+                         `Password: ${password}\n\n` +
+                         `Please keep these credentials safe and change your password after your first login.\n\n` +
+                         `Best regards,\nSystem Administration`;
+
+        try {
+            await sendEmail(adminEmail, emailSubject, emailText);
+            console.log('Welcome email sent successfully to', adminEmail);
+        } catch (emailError) {
+            console.error('Failed to send welcome email:', emailError);
+        }
 
         // 6. Remove sensitive data before sending response
         company.password = undefined;
@@ -378,7 +465,7 @@ export const registerPost = async (companyData) => {
 
         return {
             company,
-            token
+            // token
         };
     } catch (error) {
         console.error('Error in registerPost:', error);  // Added error logging

@@ -12,8 +12,9 @@ import Pagination from '../common/Pagination';
 
 const ITEMS_PER_PAGE = 5;
 
+// CompanyDashboard component manages the main dashboard view for the company
 const CompanyDashboard = () => {
-  // Main data states
+  // State variables for teams, employees, issues, error and success messages
   const [teams, setTeams] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [issues, setIssues] = useState([]);
@@ -22,18 +23,18 @@ const CompanyDashboard = () => {
   const [showTeams, setShowTeams] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Modal visibility states
+  // Modal visibility states for creating teams, adding employees, and creating issues
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
   const [isCreateIssueModalOpen, setIsCreateIssueModalOpen] = useState(false);
 
-  // Function to show error message
+  // Function to show error message for 10 seconds
   const showError = (message) => {
     setError(message);
     setTimeout(() => setError(null), 10000);
   };
 
-  // Function to show success message
+  // Function to show success message for 5 seconds
   const showSuccess = (message) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(null), 5000);
@@ -44,10 +45,12 @@ const CompanyDashboard = () => {
     fetchDashboardData();
   }, []);
 
+  // Fetches dashboard data including teams, employees, and issues
   const fetchDashboardData = async () => {
     try {
       const response = await companyAPI.getDashboard();
       
+      // Transform teams to mark members who are team leaders
       const transformedTeams = response.data.teams.map(team => ({
         ...team,
         members: team.members?.map(member => ({
@@ -66,13 +69,9 @@ const CompanyDashboard = () => {
     }
   };
 
+  // Handles team creation form submission
   const handleCreateTeam = async (newTeam) => {
     try {
-      if (!newTeam.teamLeaders?.length) {
-        showError('Please select at least one team leader');
-        return;
-      }
-
       if (!newTeam.teamName?.trim()) {
         showError('Team name is required');
         return;
@@ -100,6 +99,7 @@ const CompanyDashboard = () => {
     }
   };
 
+  // Handles adding a new employee
   const handleAddEmployee = async (newEmployee) => {
     try {
       const requiredFields = ['firstName', 'lastName', 'email', 'teamId', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord', 'birthDate'];
@@ -135,6 +135,7 @@ const CompanyDashboard = () => {
     }
   };
 
+  // Handles deleting a team with confirmation
   const handleDeleteTeam = async (teamId) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
       try {
@@ -147,6 +148,7 @@ const CompanyDashboard = () => {
     }
   };
 
+  // Handles deregistering an employee with confirmation
   const handleDeregisterEmployee = async (employeeId) => {
     if (window.confirm('Are you sure you want to deregister this employee? This action cannot be undone.')) {
       try {
@@ -159,12 +161,13 @@ const CompanyDashboard = () => {
     }
   };
 
-  // Calculate pagination for issues
+  // Pagination calculations for issues
   const totalPages = Math.ceil(issues.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentIssues = issues.slice(startIndex, endIndex);
 
+  // Handles page change for pagination
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });

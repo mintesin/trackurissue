@@ -3,6 +3,8 @@ import { Employee } from '../models/index.js';
 import Team from '../models/teamModel.js';
 import * as genericError from './genericError.js';
 import validator from 'validator';
+import { sendEmail } from '../config/nodeMailer.js';
+
 
 const handleError = (err, knownErrors = []) => {
     if (knownErrors.includes(err.name)) {
@@ -181,17 +183,53 @@ export const employeeResetAccountPost = async (resetData) => {
             throw new genericError.UnauthorizedError('Invalid security word');
         }
 
-        // Generate new password
-        const newPassword = Math.random().toString(36).slice(-8);
-        employee.password = newPassword;
-        await employee.save();
-
+        // Verification successful, do not reset password here
         return {
-            message: 'Password reset successful',
-            newPassword
+            message: 'Verification successful. Please enter your new password.'
         };
     } catch (err) {
         handleError(err, ['NotFoundError', 'UnauthorizedError', 'BadRequestError']);
+    }
+};
+
+export const employeeResetPasswordPost = async (resetData) => {
+    try {
+        const { employeeEmail, newPassword } = resetData;
+
+        if (!employeeEmail || !newPassword) {
+            throw new genericError.BadRequestError('Email and new password are required');
+        }
+
+        const employee = await Employee.findOne({ employeeEmail });
+
+        if (!employee) {
+            throw new genericError.NotFoundError('Employee not found');
+        }
+
+        // Update password
+        employee.password = newPassword;
+        await employee.save();
+
+        // Send password reset notification email
+        const emailSubject = 'Employee Account Password Reset';
+        const emailText = `Hello ${employee.firstName} ${employee.lastName},\n\n` +
+                         `Your password has been reset successfully.\n` +
+                         `Your new temporary password is: ${newPassword}\n\n` +
+                         `Please log in and change your password as soon as possible for security purposes.\n\n` +
+                         `Best regards,\nCompany HR`;
+
+        try {
+            await sendEmail(employee.employeeEmail, emailSubject, emailText);
+            console.log('Password reset email sent successfully to', employee.employeeEmail);
+        } catch (emailError) {
+            console.error('Failed to send password reset email:', emailError);
+        }
+
+        return {
+            message: 'Password updated successfully'
+        };
+    } catch (err) {
+        handleError(err, ['NotFoundError', 'BadRequestError']);
     }
 };
 
@@ -265,6 +303,19 @@ export const getEmployeeRegistrationFields = () => {
                 ]
             },
             {
+                sectionName: 'team',
+                sectionTitle: 'Team Information',
+                fields: [
+                    {
+                        name: 'teamId',
+                        label: 'Team',
+                        type: 'select',
+                        required: false,
+                        description: 'Optional: Select a team to assign this employee to'
+                    }
+                ]
+            },
+            {
                 sectionName: 'security',
                 sectionTitle: 'Security Information',
                 fields: [
@@ -333,7 +384,7 @@ export const updateEmployeeProfile = async (employeeId, updateData) => {
 
 export const registerEmployee = async (employeeData) => {
     try {
-        const requiredFields = ['firstName', 'lastName', 'email', 'teamId', 'company', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord', 'birthDate'];
+        const requiredFields = ['firstName', 'lastName', 'email', 'company', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord', 'birthDate'];
         for (const field of requiredFields) {
             if (!employeeData[field]) {
                 throw new genericError.BadRequestError(`${field} is required`);
@@ -363,28 +414,58 @@ export const registerEmployee = async (employeeData) => {
             employeeEmail,
             password,  // Plain password - will be hashed by pre-save middleware
             birthDate: new Date(employeeData.birthDate),
-            team: employeeData.teamId,
-            teams: [employeeData.teamId], // Add to teams array as well
+            team: employeeData.teamId || null,
+            teams: employeeData.teamId ? [employeeData.teamId] : [], // Add to teams array only if team is assigned
             authorization: employeeData.isTeamLeader ? 'teamleader' : 'employee'
         });
 
-        // If employee is a team leader, add to leadingTeams
-        if (employeeData.isTeamLeader) {
+        // If employee is a team leader and has a team, add to leadingTeams
+        if (employeeData.isTeamLeader && employeeData.teamId) {
             employee.leadingTeams = [employeeData.teamId];
         }
 
         await employee.save();  // Password will be hashed here by the pre-save middleware
 
-        // Update the team's members array to include this employee
-        await Team.findByIdAndUpdate(employeeData.teamId, {
-            $addToSet: { members: employee._id }
-        });
+        // Update the team's members array to include this employee (only if team is assigned)
+        if (employeeData.teamId) {
+            await Team.findByIdAndUpdate(employeeData.teamId, {
+                $addToSet: { members: employee._id }
+            });
+        }
 
-        // Populate team information before returning
+        // Get company and team details for the email and response
         const populatedEmployee = await Employee.findById(employee._id)
+            .populate('company')
             .populate('team')
             .populate('teams')
             .populate('leadingTeams');
+
+        // Send registration email with temporary password and team leader notification
+        const emailSubject = 'Welcome to the Company - Your Account Details';
+        let emailText = `Hello ${employee.firstName} ${employee.lastName},\n\n` +
+                        `You have been registered as an employee of ${populatedEmployee.company.companyName}.\n`;
+
+        if (populatedEmployee.team) {
+            emailText += `You have been assigned to the team: ${populatedEmployee.team.teamName}\n`;
+        } else {
+            emailText += `You have not been assigned to a team yet. Your manager will assign you to a team soon.\n`;
+        }
+
+        emailText += `Your temporary password is: ${password}\n\n`;
+
+        if (employeeData.isTeamLeader) {
+            emailText += 'You have been assigned as a Team Leader.\n\n';
+        }
+
+        emailText += 'Please log in and change your password as soon as possible.\n\n' +
+                     'Best regards,\nCompany HR';
+
+        try {
+            await sendEmail(employeeEmail, emailSubject, emailText);
+            console.log('Registration email sent successfully to', employeeEmail);
+        } catch (emailError) {
+            console.error('Failed to send registration email:', emailError);
+        }
 
         const employeeResponse = populatedEmployee.toObject();
         delete employeeResponse.password;

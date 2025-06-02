@@ -47,14 +47,6 @@ const Navigation = () => {
               >
                 Dashboard
               </Link>
-              {user.role === 'company' && (
-                <Link 
-                  to="/admin/issues"
-                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Manage Issues
-                </Link>
-              )}
             </div>
           </div>
           
@@ -113,14 +105,6 @@ const Navigation = () => {
           >
             Dashboard
           </Link>
-          {user.role === 'company' && (
-            <Link 
-              to="/admin/issues"
-              className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-            >
-              Manage Issues
-            </Link>
-          )}
           <Link 
             to={`/profile/${user._id}`}
             className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"

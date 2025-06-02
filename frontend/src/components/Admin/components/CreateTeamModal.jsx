@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
+// CreateTeamModal component provides a modal dialog for creating a new team
 const CreateTeamModal = ({ isOpen, onClose, onSubmit, employees }) => {
+  // State for new team data, errors, and submission status
   const [newTeam, setNewTeam] = useState({ 
     teamName: '', 
     description: '',
@@ -9,6 +11,7 @@ const CreateTeamModal = ({ isOpen, onClose, onSubmit, employees }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Reset form state when modal is opened
   useEffect(() => {
     if (isOpen) {
       setNewTeam({ teamName: '', description: '', teamLeaders: [] });
@@ -17,6 +20,7 @@ const CreateTeamModal = ({ isOpen, onClose, onSubmit, employees }) => {
     }
   }, [isOpen]);
 
+  // Validate form fields before submission
   const validateForm = () => {
     const newErrors = {};
     
@@ -32,14 +36,13 @@ const CreateTeamModal = ({ isOpen, onClose, onSubmit, employees }) => {
       newErrors.description = 'Description cannot exceed 500 characters';
     }
 
-    if (!newTeam.teamLeaders.length) {
-      newErrors.teamLeaders = 'At least one team leader is required';
-    }
+    // Team leaders are optional, no validation needed
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -72,6 +75,7 @@ const CreateTeamModal = ({ isOpen, onClose, onSubmit, employees }) => {
     }
   };
 
+  // If modal is not open, render nothing
   if (!isOpen) return null;
 
   return (
@@ -86,7 +90,8 @@ const CreateTeamModal = ({ isOpen, onClose, onSubmit, employees }) => {
             <div className="px-6 py-4 overflow-y-auto flex-1">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300">Team Leaders</label>
+                  <label className="block text-sm font-medium text-gray-300">Team Leaders (Optional)</label>
+                  <p className="text-xs text-gray-400 mb-2">You can assign team leaders later if needed</p>
                   <div className="mt-1 max-h-40 overflow-y-auto rounded-md bg-gray-700 border border-gray-600 p-2">
                     {employees?.map((employee) => (
                       <label key={employee._id} className="flex items-center space-x-2 text-white">

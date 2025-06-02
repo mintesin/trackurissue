@@ -22,8 +22,7 @@ const teamSchema = new mongoose.Schema({
   },
   teamLeaders: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Employee',
-    required: [true, 'At least one team leader is required']
+    ref: 'Employee'
   }],
   members: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -57,10 +56,11 @@ teamSchema.pre('save', function(next) {
   next();
 });
 
-// Validate at least one team leader
+// Validate team leader if assigned
 teamSchema.path('teamLeaders').validate(function(teamLeaders) {
-  if (!teamLeaders || teamLeaders.length === 0) {
-    throw new genericError.BadRequestError('At least one team leader is required');
+  if (teamLeaders && teamLeaders.length > 0) {
+    // If team leaders are assigned, ensure they are valid
+    return teamLeaders.every(leaderId => mongoose.Types.ObjectId.isValid(leaderId));
   }
   return true;
 });

@@ -9,8 +9,16 @@ const router = express.Router();
 // Public routes (no authentication required)
 router.post('/login', employeeLoginLimiter, employeeControllers.loginEmployeePost);
 router.get('/login', employeeControllers.loginEmployeeGet);
-router.post('/reset', employeeControllers.resetAccountPost);
+
+
+
+
+
 router.get('/reset', employeeControllers.resetAccountGet);
+router.post('/reset', employeeControllers.resetAccountPost);
+router.post('/reset/password', employeeControllers.resetPasswordPost);
+
+
 
 // Protected routes (authentication required)
 router.use(employeeAuth); // Apply authentication middleware to all routes below
