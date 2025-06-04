@@ -4,8 +4,8 @@ import nodemailer from 'nodemailer'
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'blockerapp01@gmail.com',
-    pass: 'tygp mltl tdps etyr' // Use Gmail app password (NOT your main password)
+    // user: 'blockerapp01@gmail.com',
+    // pass: 'tygp mltl tdps etyr' // Use Gmail app password (NOT your main password)
   }
 });
 
