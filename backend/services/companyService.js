@@ -91,7 +91,7 @@ export const resetAccountGet = () => {
 
 export const resetAccountPost = async (resetData) => {
     try {
-        const { adminEmail, favoriteWord } = resetData;
+        const { adminEmail, favoriteWord, newPassword } = resetData;
 
         if (!adminEmail || !favoriteWord) {
             throw new genericError.BadRequestError('Email and security word are required');
@@ -107,9 +107,9 @@ export const resetAccountPost = async (resetData) => {
             throw new genericError.UnauthorizedError('Invalid security word');
         }
 
-        // Generate new password
-        const newPassword = Math.random().toString(36).slice(-8);
-        company.password = newPassword;
+        // Use provided password or generate new one if not provided
+        const passwordToUse = newPassword || Math.random().toString(36).slice(-8);
+        company.password = passwordToUse;
         await company.save();
 
         // Send email notification for password reset
@@ -117,7 +117,7 @@ export const resetAccountPost = async (resetData) => {
         const emailText = `Hello ${company.adminName},\n\n` +
                          `Welcome back to the platform!\n` +
                          `Your password has been reset for ${company.companyName}.\n` +
-                         `Your new temporary password is: ${newPassword}\n\n` +
+                         `Your new temporary password is: ${passwordToUse}\n\n` +
                          `Please log in and change your password as soon as possible.\n\n` +
                          `Best regards,\nSystem Administration`;
 
@@ -130,7 +130,7 @@ export const resetAccountPost = async (resetData) => {
 
         return {
             message: 'Password reset successful',
-            newPassword
+            newPassword: passwordToUse
         };
     } catch (error) {
         console.error('Error in resetAccountPost:', error);
@@ -379,7 +379,21 @@ export const registerGet = () => {
  */
 export const registerPost = async (companyData) => {
     try {
-        // 1. Validate required fields
+        // 1. Sanitize and validate required fields
+        const sanitizedData = {
+            companyName: companyData.companyName?.trim(),
+            adminName: companyData.adminName?.trim(),
+            adminEmail: companyData.adminEmail?.trim(),
+            password: companyData.password,
+            streetNumber: companyData.streetNumber?.trim(),
+            city: companyData.city?.trim(),
+            state: companyData.state?.trim(),
+            zipcode: companyData.zipcode?.trim(),
+            country: companyData.country?.trim(),
+            favoriteWord: companyData.favoriteWord?.trim(),
+            shortDescription: companyData.shortDescription?.trim()
+        };
+
         const {
             companyName,
             adminName,
@@ -392,7 +406,7 @@ export const registerPost = async (companyData) => {
             country,
             favoriteWord,
             shortDescription
-        } = companyData;
+        } = sanitizedData;
 
         if (!companyName || !adminName || !adminEmail || !password || !favoriteWord || !shortDescription || 
             !streetNumber || !city || !state || !zipcode || !country) {
@@ -419,7 +433,7 @@ export const registerPost = async (companyData) => {
                     : 'Admin email already registered'
             );
         }
-    console.log("companyData")
+
         // 4. Create new company
         const company = await companyModel.create({
             companyName,
@@ -436,11 +450,11 @@ export const registerPost = async (companyData) => {
         });
 
         // 5. Generate JWT token
-        // const token = jwt.sign(
-        //     { id: company._id },
-        //     process.env.JWT_SECRET || 'your-secret-key',  // Added fallback secret
-        //     { expiresIn: '24h' }
-        // );
+        const token = jwt.sign(
+            { id: company._id },
+            process.env.JWT_SECRET || 'your-secret-key',  // Added fallback secret
+            { expiresIn: '24h' }
+        );
         
         // Send welcome email to company admin
         const emailSubject = 'Welcome to Our Platform';
@@ -465,7 +479,7 @@ export const registerPost = async (companyData) => {
 
         return {
             company,
-            // token
+            token
         };
     } catch (error) {
         console.error('Error in registerPost:', error);  // Added error logging

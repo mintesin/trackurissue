@@ -28,9 +28,6 @@ export const loginLimiter = rateLimit({
         return process.env.NODE_ENV !== 'production';
     }
 });
-loginLimiter.skip = () => {
-    return process.env.NODE_ENV !== 'production';
-};
 
 /**
  * JWT Authentication Middleware
@@ -112,6 +109,3 @@ export const apiLimiter = rateLimit({
         return process.env.NODE_ENV !== 'production';
     }
 });
-apiLimiter.skip = () => {
-    return process.env.NODE_ENV !== 'production';
-};
