@@ -384,7 +384,7 @@ export const updateEmployeeProfile = async (employeeId, updateData) => {
 
 export const registerEmployee = async (employeeData) => {
     try {
-        const requiredFields = ['firstName', 'lastName', 'email', 'company', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord', 'birthDate'];
+        const requiredFields = ['firstName', 'lastName', 'employeeEmail', 'company', 'streetNumber', 'city', 'state', 'zipcode', 'country', 'favoriteWord', 'birthDate'];
         for (const field of requiredFields) {
             if (!employeeData[field]) {
                 throw new genericError.BadRequestError(`${field} is required`);
@@ -392,7 +392,7 @@ export const registerEmployee = async (employeeData) => {
         }
 
         // Map email to employeeEmail
-        const employeeEmail = employeeData.employeeEmail || employeeData.email;
+        const employeeEmail = employeeData.employeeEmail;
         
         const existingEmployee = await Employee.findOne({ 
             employeeEmail,

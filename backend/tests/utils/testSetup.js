@@ -43,7 +43,7 @@ export const generateTestCompany = (overrides = {}) => ({
     companyName: 'Test Company',
     adminName: 'Test Admin',
     shortDescription: 'Test Description',
-    adminEmail: 'test@company.com',
+    adminEmail: 'blockerapp01@gmail.com',
     password: 'TestPassword123!',
     streetNumber: '123',
     city: 'Test City',
