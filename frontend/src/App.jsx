@@ -13,7 +13,9 @@
  */
 
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useEffect } from 'react';
+import { loginSuccess } from './store/slices/authSlice';
 import IssueDetails from './components/Admin/components/IssueDetails';
 import AssignIssue from './components/Admin/components/AssignIssue';
 import EditIssue from './components/Admin/components/EditIssue';
@@ -171,6 +173,20 @@ const AppRoutes = () => {
 };
 
 function App() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    const role = localStorage.getItem('role');
+    if (token && user && role) {
+      dispatch(loginSuccess({
+        user: JSON.parse(user),
+        token,
+        role
+      }));
+    }
+  }, [dispatch]);
+
   return (
     <Router>
       <AppRoutes />
