@@ -2,30 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { employeeAPI } from '../../../services/api';
 
+// Component for solving an assigned issue by an employee
 const AssignedIssueSolve = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // assigned issue id
+  const { id } = useParams(); // assigned issue id from route params
+
+  // State variables for issue details and form fields
   const [issueDetails, setIssueDetails] = useState(null);
   const [description, setDescription] = useState('');
   const [solution, setSolution] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
+  const [loading, setLoading] = useState(true); // loading state for fetching issue
+  const [submitting, setSubmitting] = useState(false); // submitting state for form
+  const [error, setError] = useState(null); // error message
+  const [successMessage, setSuccessMessage] = useState(null); // success message
 
+  // Fetch issue details when component mounts or id changes
   useEffect(() => {
     const fetchIssueDetails = async () => {
       try {
         setLoading(true);
-        console.log('Fetching issue details for ID:', id);
+        // Fetch issue details from API
         const response = await employeeAPI.getIssueToSolve(id);
-        console.log('API Response:', response.data);
         const details = response.data.issueDetails;
-        console.log('Issue Details:', details);
-        console.log('Issue Topic:', details?.issue?.topic);
-        console.log('Issue Description:', details?.issue?.description);
         setIssueDetails(details);
+        // Pre-fill description if available
         if (details?.issue?.description) {
           setDescription(details.issue.description);
         }
@@ -38,6 +39,7 @@ const AssignedIssueSolve = () => {
     fetchIssueDetails();
   }, [id]);
 
+  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -46,6 +48,7 @@ const AssignedIssueSolve = () => {
     );
   }
 
+  // Show error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -54,6 +57,7 @@ const AssignedIssueSolve = () => {
     );
   }
 
+  // Show message if no issue details are found
   if (!issueDetails || !issueDetails.issue) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -65,6 +69,7 @@ const AssignedIssueSolve = () => {
     );
   }
 
+  // Handle form submission for solving the issue
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -72,6 +77,7 @@ const AssignedIssueSolve = () => {
     setError(null);
 
     try {
+      // Call API to submit the solution
       await employeeAPI.solveIssue(id, {
         solution,
         additionalNotes,
@@ -89,9 +95,11 @@ const AssignedIssueSolve = () => {
     }
   };
 
+  // Render the form and issue details
   return (
     <div className="min-h-screen bg-gray-900">
       <div className="max-w-3xl mx-auto p-4 bg-gray-800 rounded-md text-white">
+        {/* Header and navigation */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold">Solve Assigned Issue</h2>
           <button
@@ -101,10 +109,12 @@ const AssignedIssueSolve = () => {
             Back to Dashboard
           </button>
         </div>
+        {/* Issue topic */}
         <div className="mb-4">
           <h3 className="text-xl font-semibold">Issue Topic:</h3>
           <p>{issueDetails?.issue?.topic || 'No topic available'}</p>
         </div>
+        {/* Form for solving the issue */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block font-semibold mb-1" htmlFor="description">Description (editable):</label>
@@ -146,6 +156,7 @@ const AssignedIssueSolve = () => {
             {submitting ? 'Submitting...' : 'Solve Issue'}
           </button>
         </form>
+        {/* Success and error messages */}
         {successMessage && <p className="mt-4 text-green-400">{successMessage}</p>}
         {error && <p className="mt-4 text-red-500">{error}</p>}
       </div>

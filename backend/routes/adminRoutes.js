@@ -67,6 +67,9 @@ router.route('/team/:teamId/member')
 router.route('/team/:teamId/member/:employeeId')
     .delete(teamControllers.removeTeamMember);
 
+// Assign leader to team
+router.post('/team/:teamId/assign-leader', teamControllers.assignLeader);
+
 // Issue Management Routes
 router.route('/issues')
     .get(createdIssueControllers.issuelist)

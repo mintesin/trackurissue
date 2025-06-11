@@ -159,6 +159,25 @@ export const removeTeamMember = asynchandler(async(req, res, next) => {
     }
 });
 
+/**
+ * POST /team/:teamId/assign-leader
+ * Assigns a leader to the team
+ */
+export const assignLeader = asynchandler(async(req, res, next) => {
+    try {
+        const { teamId } = req.params;
+        const { employeeId } = req.body;
+        console.log('[Assign Leader] Endpoint hit:', { teamId, employeeId });
+        if (!teamId || !employeeId) {
+            throw new genericError.BadRequestError('Team ID and Employee ID are required');
+        }
+        const updatedTeam = await teamService.assignLeader(teamId, employeeId);
+        res.status(200).json(updatedTeam);
+    } catch (err) {
+        next(err);
+    }
+});
+
 export default {
     teamdashboard,
     teamcreationGet,
@@ -167,5 +186,6 @@ export default {
     teamdeletionPost,
     getTeamMembers,
     addTeamMember,
-    removeTeamMember
+    removeTeamMember,
+    assignLeader
 };

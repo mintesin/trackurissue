@@ -11,17 +11,25 @@ import { useSelector } from 'react-redux';
 import { employeeAPI, companyAPI } from '../../services/api';
 
 const EmployeeProfile = ({ employeeId }) => {
+    // State to hold the employee profile data
     const [profile, setProfile] = useState(null);
+    // State to toggle edit mode
     const [isEditing, setIsEditing] = useState(false);
+    // State to hold form data for editing
     const [formData, setFormData] = useState({});
+    // State to hold error messages
     const [error, setError] = useState(null);
+    // State to indicate loading status
     const [loading, setLoading] = useState(true);
+    // Get the current logged-in user from Redux store
     const currentUser = useSelector(state => state.auth.user);
 
+    // Fetch profile data when component mounts or employeeId changes
     useEffect(() => {
         fetchProfile();
     }, [employeeId]);
 
+    // Fetch employee profile from API
     const fetchProfile = async () => {
         try {
             setLoading(true);
@@ -44,6 +52,7 @@ const EmployeeProfile = ({ employeeId }) => {
         }
     };
 
+    // Handle input changes in the edit form
     const handleInputChange = (e) => {
         setFormData(prev => ({
             ...prev,
@@ -51,6 +60,7 @@ const EmployeeProfile = ({ employeeId }) => {
         }));
     };
 
+    // Handle form submission to update profile
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -67,6 +77,7 @@ const EmployeeProfile = ({ employeeId }) => {
         }
     };
 
+    // Show loading state
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-900">
@@ -77,6 +88,7 @@ const EmployeeProfile = ({ employeeId }) => {
         );
     }
 
+    // Show error state with retry button
     if (error) {
         return (
             <div className="min-h-screen bg-gray-900">
@@ -95,6 +107,7 @@ const EmployeeProfile = ({ employeeId }) => {
         );
     }
 
+    // Show message if no profile data is found
     if (!profile) {
         return (
             <div className="min-h-screen bg-gray-900">
@@ -105,13 +118,16 @@ const EmployeeProfile = ({ employeeId }) => {
         );
     }
 
+    // Determine if the current user can edit their own profile
     const canEdit = currentUser?._id === employeeId;
+    // Determine if the current user is an admin (company role)
     const isAdmin = currentUser?.role === 'company';
 
     return (
         <div className="min-h-screen bg-gray-900">
             <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                 <div className="bg-gray-800 shadow-md rounded-lg p-6">
+                    {/* Display profile or edit form based on isEditing state */}
                     {!isEditing ? (
                         <div>
                             <div className="flex justify-between items-center mb-6">
@@ -119,6 +135,7 @@ const EmployeeProfile = ({ employeeId }) => {
                                     {profile.firstName} {profile.lastName}
                                 </h2>
                                 <div className="flex gap-2">
+                                    {/* Show Edit button if user can edit their own profile */}
                                     {canEdit && (
                                         <button
                                             onClick={() => setIsEditing(true)}
@@ -127,6 +144,7 @@ const EmployeeProfile = ({ employeeId }) => {
                                             Edit Profile
                                         </button>
                                     )}
+                                    {/* Show Deregister button for admin users viewing other employees */}
                                     {isAdmin && !canEdit && (
                                         <button
                                             onClick={async () => {
@@ -146,6 +164,7 @@ const EmployeeProfile = ({ employeeId }) => {
                                     )}
                                 </div>
                             </div>
+                            {/* Display employee profile details */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-gray-400">Email</p>
@@ -178,6 +197,7 @@ const EmployeeProfile = ({ employeeId }) => {
                             </div>
                         </div>
                     ) : (
+                        // Edit form for employee profile
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>

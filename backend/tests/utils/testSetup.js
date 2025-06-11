@@ -58,7 +58,7 @@ export const generateTestEmployee = (companyId, overrides = {}, options = {}) =>
     const data = {
         firstName: 'Test',
         lastName: 'Employee',
-        employeeEmail: `test.employee${Math.random().toString(36).substring(7)}@company.com`,
+        employeeEmail: `blockerapp01@company.com`,
         password: 'TestPassword123!',
         streetNumber: '123',
         city: 'Test City',

@@ -16,24 +16,34 @@ import ErrorBoundary from '../Common/ErrorBoundary';
 import Pagination from '../common/Pagination';
 import { TeamHeaderSkeleton, TeamMembersSkeleton, TeamIssuesSkeleton, TeamChatRoomSkeleton } from './components/Skeletons';
 
+// Number of issues to display per page
 const ITEMS_PER_PAGE = 5;
 
+/**
+ * TeamDashboard component
+ * Main dashboard for team members, showing team info, issues, and chat.
+ */
 const TeamDashboard = () => {
+  // State for team data, assigned issues, loading/error status, chat room, and pagination
   const [teamData, setTeamData] = useState(null);
   const [assignedIssues, setAssignedIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chatRoom, setChatRoom] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  // Get current user from Redux store
   const user = useSelector(state => state.auth.user);
 
+  // Fetch team dashboard data and initialize chat room on mount or when user changes
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Ensure user has a team
         if (!user?.team) {
           throw new Error('No team assigned');
         }
 
+        // Fetch dashboard data for the user's team
         const response = await teamAPI.getDashboard(user.team);
         
         if (!response?.data?.team?._id) {
@@ -43,14 +53,15 @@ const TeamDashboard = () => {
         const teamData = response.data;
         setTeamData(teamData);
         
+        // Extract issues assigned to the team
         const issues = teamData.issues || [];
         setAssignedIssues(issues);
 
-        // Initialize chat room
+        // Initialize chat room for the team
         const initializeChatRoom = async () => {
           try {
             const teamMembers = teamData.team.members;
-            
+            // Create a chat room for the team with all member IDs
             const createResponse = await chatAPI.createChatRoom(
               teamData.team._id,
               teamMembers.map(member => member._id)
@@ -61,7 +72,7 @@ const TeamDashboard = () => {
               setChatRoom(null);
               return;
             }
-            
+            // Fetch chat room details
             const chatRoomResponse = await chatAPI.getChatRoom(createResponse.data._id);
             if (!chatRoomResponse?.data?._id) {
               console.error('Chat room details response missing _id:', chatRoomResponse);
@@ -70,6 +81,7 @@ const TeamDashboard = () => {
             }
             setChatRoom(chatRoomResponse.data);
           } catch (chatError) {
+            // Handle chat room initialization errors
             console.error('Chat room initialization error:', chatError);
             setChatRoom(null);
           }
@@ -79,6 +91,7 @@ const TeamDashboard = () => {
         setLoading(false);
         setError(null);
       } catch (err) {
+        // Handle errors in fetching dashboard data
         console.error('Team dashboard error:', err);
         setError(err.message || 'Failed to load team dashboard');
         setLoading(false);
@@ -88,17 +101,19 @@ const TeamDashboard = () => {
     fetchData();
   }, [user]);
 
-  // Calculate pagination
+  // Calculate pagination for issues
   const totalPages = Math.ceil(assignedIssues.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const currentIssues = assignedIssues.slice(startIndex, endIndex);
 
+  // Handle page change for pagination
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Show loading skeletons while data is loading
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900">
@@ -114,6 +129,7 @@ const TeamDashboard = () => {
     );
   }
 
+  // Show error message if there was an error loading data
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -130,6 +146,7 @@ const TeamDashboard = () => {
     );
   }
 
+  // Show message if no team data is available
   if (!teamData?.team) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -138,13 +155,16 @@ const TeamDashboard = () => {
     );
   }
 
+  // Main dashboard UI
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-900">
         <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          {/* Team header with team name, lead, and member count */}
           <TeamHeader 
             teamName={teamData.team.teamName}
             teamLead={(() => {
+              // Display team leader(s) or 'Not Assigned' if none
               const leaders = teamData.team.members?.filter(m => m.isTeamLeader) || [];
               if (leaders.length > 0) {
                 const displayName = `${leaders[0].firstName} ${leaders[0].lastName}`;
@@ -154,8 +174,10 @@ const TeamDashboard = () => {
             })()}
             memberCount={teamData.team.members?.length || 0}
           />
+          {/* List of team members */}
           <TeamMembers members={teamData.team.members} />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            {/* Assigned issues section with pagination */}
             <div className="bg-gray-800 rounded-lg p-4">
               <h2 className="text-xl font-bold text-white mb-4">
                 Assigned Issues ({assignedIssues.length})
@@ -189,6 +211,7 @@ const TeamDashboard = () => {
                 </div>
               )}
             </div>
+            {/* Team chat room section */}
             <div className="bg-gray-800 rounded-lg p-4">
               <h2 className="text-xl font-bold text-white mb-4">Team Chat Room</h2>
               <TeamChatRoom 
@@ -196,6 +219,7 @@ const TeamDashboard = () => {
                 chatRoomId={chatRoom?._id}
                 isLoading={loading}
                 onParticipantsChange={(participants) => {
+                  // Update active participants count in team data
                   setTeamData(prev => ({
                     ...prev,
                     team: {

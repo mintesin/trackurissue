@@ -1,16 +1,46 @@
+/**
+ * @fileoverview WebSocket Hook
+ * 
+ * Custom React hook for managing WebSocket connections in chat rooms.
+ * Provides real-time communication features including:
+ * - Automatic connection management
+ * - Authentication handling
+ * - Room participation tracking
+ * - Message subscription system
+ * - Reconnection logic
+ * - Typing indicators
+ */
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+/**
+ * WebSocket connection manager hook
+ * @param {string} roomId - ID of the chat room to connect to
+ * @returns {Object} WebSocket connection state and methods
+ */
 const useWebSocket = (roomId) => {
+  /** Connection status state */
   const [isConnected, setIsConnected] = useState(false);
+  /** Error state for connection/message handling */
   const [error, setError] = useState(null);
+  /** Set of current room participants */
   const [participants, setParticipants] = useState(new Set());
+  
+  /** Reference to WebSocket instance */
   const wsRef = useRef(null);
+  /** Map of message type subscribers */
   const subscribersRef = useRef(new Map());
+  /** Reference to reconnection timeout */
   const reconnectTimeoutRef = useRef(null);
+  /** Maximum number of reconnection attempts */
   const maxReconnectAttempts = 5;
+  /** Current reconnection attempt counter */
   const reconnectAttemptRef = useRef(0);
 
-  // Initialize WebSocket connection
+  /**
+   * Initialize and manage WebSocket connection
+   * Sets up connection, message handling, and cleanup
+   */
   useEffect(() => {
     if (!roomId) return;
 
@@ -160,7 +190,12 @@ const useWebSocket = (roomId) => {
     };
   }, [roomId]);
 
-  // Subscribe to specific message types
+  /**
+   * Subscribe to specific message types
+   * @param {string} type - Message type to subscribe to
+   * @param {Function} callback - Callback function for handling messages
+   * @returns {Function} Unsubscribe function
+   */
   const subscribe = useCallback((type, callback) => {
     if (!subscribersRef.current.has(type)) {
       subscribersRef.current.set(type, []);
@@ -177,7 +212,11 @@ const useWebSocket = (roomId) => {
     };
   }, []);
 
-  // Send a message
+  /**
+   * Send a message to the chat room
+   * @param {string} content - Message content to send
+   * @returns {boolean} Success status of sending message
+   */
   const sendMessage = useCallback((content) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       console.warn('WebSocket is not connected');
@@ -197,7 +236,10 @@ const useWebSocket = (roomId) => {
     }
   }, [roomId]);
 
-  // Send typing indicator
+  /**
+   * Send typing indicator to the chat room
+   * @returns {boolean} Success status of sending indicator
+   */
   const sendTyping = useCallback(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       return false;
