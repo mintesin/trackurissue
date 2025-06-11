@@ -26,20 +26,27 @@
 
 import React from 'react';
 
+// TeamHeader component displays the team name, leader(s), member count, and a settings button
 const TeamHeader = ({ teamName, teamLead, memberCount }) => {
+  // Determine if there are multiple leaders (e.g., "Alice +2")
   const hasMultipleLeaders = teamLead.includes('+');
+  // Split the leader string into main leader and extra count if multiple
   const [mainLeader, extraCount] = hasMultipleLeaders 
     ? teamLead.split(' +') 
     : [teamLead, '0'];
 
   return (
+    // Main container with background and padding
     <div className="bg-gray-800 rounded-lg p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        {/* Left section: Team name and info */}
         <div className="mb-4 md:mb-0">
           <h1 className="text-2xl font-bold text-white">
+            {/* Show team name or fallback */}
             {teamName || 'Team Dashboard'}
           </h1>
           <div className="mt-2 flex flex-col sm:flex-row sm:flex-wrap sm:space-x-6">
+            {/* Team Lead display with icon and tooltip for multiple leaders */}
             <div className="mt-2 flex items-center text-sm text-gray-300 group relative">
               <svg 
                 className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" 
@@ -56,6 +63,7 @@ const TeamHeader = ({ teamName, teamLead, memberCount }) => {
               </svg>
               <span className={`${mainLeader === 'Not Assigned' ? 'text-yellow-500' : 'text-gray-300'}`}>
                 Team Lead: {mainLeader}
+                {/* If multiple leaders, show extra count with tooltip */}
                 {hasMultipleLeaders && (
                   <span className="ml-1 text-blue-400 cursor-help" title={`+${extraCount} more team leaders`}>
                     +{extraCount}
@@ -63,6 +71,7 @@ const TeamHeader = ({ teamName, teamLead, memberCount }) => {
                 )}
               </span>
             </div>
+            {/* Member count display with icon and warning color if zero */}
             <div className="mt-2 flex items-center text-sm text-gray-300">
               <svg 
                 className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" 
@@ -83,15 +92,17 @@ const TeamHeader = ({ teamName, teamLead, memberCount }) => {
             </div>
           </div>
         </div>
+        {/* Right section: Team settings button */}
         <div className="flex space-x-3">
           <button
             type="button"
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             onClick={() => {
-              // This will be implemented when we add team settings functionality
+              // Placeholder for future team settings functionality
               console.log('Team settings clicked');
             }}
           >
+            {/* Settings gear icon */}
             <svg 
               className="-ml-1 mr-2 h-5 w-5" 
               fill="none" 

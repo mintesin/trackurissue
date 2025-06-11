@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { companyAPI } from '../../services/api';
+import { companyAPI, teamAPI } from '../../services/api';
 import MessageDisplay from './components/MessageDisplay';
 import DashboardHeader from './components/DashboardHeader';
 import TeamsGrid from './components/TeamsGrid';
@@ -242,6 +242,15 @@ const CompanyDashboard = () => {
                 <TeamsGrid 
                   teams={teams}
                   onDeleteTeam={handleDeleteTeam}
+                  onAssignLeader={async (teamId, employeeId) => {
+                    try {
+                      await teamAPI.assignLeader(teamId, employeeId);
+                      showSuccess('Leader assigned successfully');
+                      fetchDashboardData();
+                    } catch (error) {
+                      showError(error.message || 'Error assigning leader');
+                    }
+                  }}
                 />
               ) : (
                 <EmployeesGrid 

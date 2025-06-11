@@ -71,12 +71,10 @@ export const getSolveIssueData = async (issueId) => {
         }
 
         return {
-            issueDetails: {
-                ...issue.toObject(),
-                solutionFields: {
-                    solution: '',
-                    additionalNotes: ''
-                }
+            ...issue.toObject(),
+            solutionFields: {
+                solution: '',
+                additionalNotes: ''
             }
         };
     } catch (error) {

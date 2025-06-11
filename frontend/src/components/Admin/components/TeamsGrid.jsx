@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
 
-const TeamsGrid = ({ teams, onDeleteTeam }) => {
+const TeamsGrid = ({ teams, onDeleteTeam, onAssignLeader }) => {
   const [expandedTeam, setExpandedTeam] = useState(null);
+  const [assigningTeamId, setAssigningTeamId] = useState(null);
+  const [selectedLeader, setSelectedLeader] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
 
   const handleDeleteClick = (teamId, teamName) => {
     if (window.confirm(`Are you sure you want to delete the team "${teamName}"? This action cannot be undone.`)) {
       onDeleteTeam(teamId);
     }
+  };
+
+  const handleAssignLeader = async (teamId) => {
+    if (!selectedLeader) return;
+    setAssignLoading(true);
+    await onAssignLeader(teamId, selectedLeader);
+    setAssignLoading(false);
+    setAssigningTeamId(null);
+    setSelectedLeader('');
   };
 
   return (
@@ -34,17 +46,57 @@ const TeamsGrid = ({ teams, onDeleteTeam }) => {
                     <p className="mt-1 text-sm text-gray-300">{team.description}</p>
                   )}
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(team.id || team._id, team.teamName);
-                  }}
-                  className="ml-4 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                >
-                  Delete
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAssigningTeamId(team.id || team._id);
+                      setSelectedLeader('');
+                    }}
+                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Assign Leader
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(team.id || team._id, team.teamName);
+                    }}
+                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              
+              {assigningTeamId === (team.id || team._id) && (
+                <div className="mt-2 flex items-center space-x-2">
+                  <select
+                    value={selectedLeader}
+                    onChange={e => setSelectedLeader(e.target.value)}
+                    className="px-2 py-1 rounded bg-gray-800 text-white border border-gray-600"
+                  >
+                    <option value="">Select member</option>
+                    {team.members?.map(member => (
+                      <option key={member._id} value={member._id}>
+                        {member.firstName} {member.lastName}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAssignLeader(team.id || team._id)}
+                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    disabled={!selectedLeader || assignLoading}
+                  >
+                    {assignLoading ? 'Assigning...' : 'Confirm'}
+                  </button>
+                  <button
+                    onClick={() => setAssigningTeamId(null)}
+                    className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
               {expandedTeam === (team.id || team._id) && (
                 <div className="mt-4 pl-4 border-l-2 border-gray-700">
                   <div className="mb-3">
@@ -57,7 +109,6 @@ const TeamsGrid = ({ teams, onDeleteTeam }) => {
                       )) || <li className="text-sm text-gray-400">No leaders assigned</li>}
                     </ul>
                   </div>
-                  
                   <div>
                     <h4 className="text-sm font-medium text-gray-300 mb-1">Team Members:</h4>
                     <ul className="list-disc list-inside">

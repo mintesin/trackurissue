@@ -234,15 +234,25 @@ class WebSocketService {
             console.log('Broadcasting message:', message);
             this.broadcastToRoom(data.roomId, message);
 
-            // Then attempt to save to database asynchronously
-            try {
-                // Note: Add your database save logic here
-                // This runs after broadcasting, so it won't delay real-time updates
-                console.log('Message broadcast complete, saving to database...');
-            } catch (dbError) {
-                console.error('Error saving message to database:', dbError);
-                // Don't throw error since message was already broadcast successfully
-            }
+            // Save the message to the chat room in the database
+            import('../models/chatRoomModel.js').then(({ default: ChatRoom }) => {
+                ChatRoom.findByIdAndUpdate(
+                    data.roomId,
+                    {
+                        $push: {
+                            messages: {
+                                content: data.message,
+                                sender: ws.userId,
+                                timestamp: messageData.timestamp
+                            }
+                        },
+                        $set: { updatedAt: new Date() }
+                    },
+                    { new: true }
+                ).catch(dbError => {
+                    console.error('Error saving message to database:', dbError);
+                });
+            });
         } catch (error) {
             console.error('Error handling message:', error);
             ws.send(JSON.stringify({
@@ -261,7 +271,11 @@ class WebSocketService {
                 const typingEvent = {
                     type: 'typing',
                     roomId,
-                    userId: ws.userId
+                    user: {
+                        _id: ws.userId,
+                        firstName: ws.firstName,
+                        lastName: ws.lastName
+                    }
                 };
 
                 this.broadcastToRoom(roomId, typingEvent, [ws.userId]); // Exclude sender

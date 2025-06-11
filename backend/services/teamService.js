@@ -361,6 +361,49 @@ export const removeMember = async (teamId, employeeId) => {
   }
 };
 
+/**
+ * Assigns a leader to a team
+ */
+export const assignLeader = async (teamId, employeeId) => {
+  try {
+    const team = await teamModel.findById(teamId);
+    if (!team) throw new genericError.NotFoundError('Team not found');
+
+    // Add to teamLeaders if not already present
+    if (!team.teamLeaders.map(id => id.toString()).includes(employeeId)) {
+      team.teamLeaders.push(employeeId);
+    }
+    // Add to members if not already present
+    if (!team.members.map(id => id.toString()).includes(employeeId)) {
+      team.members.push(employeeId);
+    }
+    await team.save();
+
+    // Update employee's authorization and leadingTeams
+    const employee = await employeeModel.findById(employeeId);
+    if (employee) {
+      employee.authorization = 'teamleader';
+      employee.leadingTeams = employee.leadingTeams || [];
+      if (!employee.leadingTeams.map(id => id.toString()).includes(teamId)) {
+        employee.leadingTeams.push(teamId);
+      }
+      if (!employee.teams.map(id => id.toString()).includes(teamId)) {
+        employee.teams.push(teamId);
+      }
+      await employee.save();
+    }
+
+    // Return updated team with populated leaders and members
+    const updatedTeam = await teamModel.findById(teamId)
+      .populate('members', 'firstName lastName email authorization')
+      .populate('teamLeaders', '_id firstName lastName email authorization')
+      .lean();
+    return updatedTeam;
+  } catch (err) {
+    throw err;
+  }
+};
+
 export default {
   teamHome,
   getTeamCreationFields,
@@ -371,5 +414,6 @@ export default {
   getAddMemberData,
   addMember,
   getRemoveMemberData,
-  removeMember
+  removeMember,
+  assignLeader
 };
