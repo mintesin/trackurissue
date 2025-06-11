@@ -2,4 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Improved global button styles */
+button {
+  @apply px-4 py-2 rounded-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 shadow-sm;
+  background-color: theme('colors.blue.600');
+  color: white;
+}
+button:hover {
+  background-color: theme('colors.blue.700');
+  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.15);
+}
+button:active {
+  background-color: theme('colors.blue.800');
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Custom styles can be added below */
