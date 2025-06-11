@@ -7,21 +7,21 @@ const DashboardHeader = ({ onCreateTeam, onAddEmployee, onCreateIssue }) => {
       <div className="flex flex-wrap gap-3">
         <button
           onClick={onCreateTeam}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 text-lg"
         >
-          Create Team
+          <span role="img" aria-label="team">👥</span> Create Team
         </button>
         <button
           onClick={onAddEmployee}
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200"
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 focus:ring-2 focus:ring-green-300 focus:ring-offset-2 text-lg"
         >
-          Add Employee
+          <span role="img" aria-label="employee">➕</span> Add Employee
         </button>
         <button
           onClick={onCreateIssue}
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200"
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 focus:ring-2 focus:ring-purple-300 focus:ring-offset-2 text-lg"
         >
-          Create Issue
+          <span role="img" aria-label="issue">🐞</span> Create Issue
         </button>
       </div>
     </div>
