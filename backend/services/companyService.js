@@ -16,7 +16,7 @@ import employeeModel from '../models/employeeModel.js';
 import crIssueModel from '../models/createdIssueModel.js';
 import * as genericError from './genericError.js';
 import validator from 'validator';
-import { sendEmail } from '../config/nodeMailer.js';
+import sendEmail from '../config/nodeMailer.js';
 
 /**
  * Get company dashboard data

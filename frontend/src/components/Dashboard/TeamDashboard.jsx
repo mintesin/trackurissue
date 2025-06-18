@@ -13,7 +13,8 @@ import TeamMembers from './components/TeamMembers';
 import TeamIssues from './components/TeamIssues';
 import TeamChatRoom from './components/TeamChatRoom';
 import ErrorBoundary from '../Common/ErrorBoundary';
-import Pagination from '../common/Pagination';
+import Pagination from '../Common/Pagination';
+// import Pagination from '../Common/Pagination';
 import { TeamHeaderSkeleton, TeamMembersSkeleton, TeamIssuesSkeleton, TeamChatRoomSkeleton } from './components/Skeletons';
 
 // Number of issues to display per page

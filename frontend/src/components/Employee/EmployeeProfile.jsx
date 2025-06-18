@@ -164,6 +164,16 @@ const EmployeeProfile = ({ employeeId }) => {
                                     )}
                                 </div>
                             </div>
+                            {/* Display avatar if available */}
+                            {profile.avatar && (
+                                <div className="mb-4 flex justify-center">
+                                    <img
+                                        src={profile.avatar}
+                                        alt="Avatar"
+                                        className="w-24 h-24 rounded-full border-2 border-gray-500"
+                                    />
+                                </div>
+                            )}
                             {/* Display employee profile details */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -194,6 +204,16 @@ const EmployeeProfile = ({ employeeId }) => {
                                     <p className="text-gray-400">Country</p>
                                     <p className="font-medium text-white">{profile.country}</p>
                                 </div>
+                                {/* Notification Preferences */}
+                                {profile.notificationPreferences && (
+                                    <div className="col-span-2">
+                                        <p className="text-gray-400 mb-1">Notification Preferences</p>
+                                        <div className="flex gap-4">
+                                            <span className="text-white">Email: {profile.notificationPreferences.email ? 'On' : 'Off'}</span>
+                                            <span className="text-white">SMS: {profile.notificationPreferences.sms ? 'On' : 'Off'}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -276,6 +296,62 @@ const EmployeeProfile = ({ employeeId }) => {
                                         className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                         required
                                     />
+                                </div>
+                                {/* Avatar field */}
+                                <div>
+                                    <label className="block text-gray-300">Avatar URL</label>
+                                    <input
+                                        type="text"
+                                        name="avatar"
+                                        value={formData.avatar || ''}
+                                        onChange={handleInputChange}
+                                        className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                    {formData.avatar && (
+                                        <img
+                                            src={formData.avatar}
+                                            alt="Avatar Preview"
+                                            className="mt-2 w-16 h-16 rounded-full border border-gray-500"
+                                        />
+                                    )}
+                                </div>
+                                {/* Notification Preferences */}
+                                <div>
+                                    <label className="block text-gray-300 mb-1">Notification Preferences</label>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="notificationPreferences.email"
+                                                checked={formData.notificationPreferences?.email ?? true}
+                                                onChange={e => setFormData(prev => ({
+                                                    ...prev,
+                                                    notificationPreferences: {
+                                                        ...prev.notificationPreferences,
+                                                        email: e.target.checked
+                                                    }
+                                                }))}
+                                                className="form-checkbox h-4 w-4 text-blue-600"
+                                            />
+                                            <span className="ml-2 text-gray-200">Email</span>
+                                        </label>
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="notificationPreferences.sms"
+                                                checked={formData.notificationPreferences?.sms ?? false}
+                                                onChange={e => setFormData(prev => ({
+                                                    ...prev,
+                                                    notificationPreferences: {
+                                                        ...prev.notificationPreferences,
+                                                        sms: e.target.checked
+                                                    }
+                                                }))}
+                                                className="form-checkbox h-4 w-4 text-blue-600"
+                                            />
+                                            <span className="ml-2 text-gray-200">SMS</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                             <div className="flex justify-end space-x-4 mt-6">

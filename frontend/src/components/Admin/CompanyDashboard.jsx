@@ -8,7 +8,7 @@ import CreateTeamModal from './components/CreateTeamModal';
 import AddEmployeeModal from './components/AddEmployeeModal';
 import CreateIssueModal from './components/CreateIssueModal';
 import CreatedIssuesGrid from './components/CreatedIssuesGrid';
-import Pagination from '../common/Pagination';
+import Pagination from '../Common/Pagination';
 
 const ITEMS_PER_PAGE = 5;
 

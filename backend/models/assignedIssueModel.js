@@ -37,7 +37,12 @@ const assignedIssueSchema = new Schema({
 		enum: ["assigned", "inProgress", "solved"],
 		default: "assigned"
 	}
-})
+});
+
+// Add indexes for performance
+assignedIssueSchema.index({ team: 1 });
+assignedIssueSchema.index({ assignee: 1 });
+assignedIssueSchema.index({ issue: 1 });
 
 assignedIssueSchema.virtual('assigneddate').get(function() {
     const assignedDate = new Date(this.assignedAt);

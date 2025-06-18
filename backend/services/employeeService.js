@@ -3,7 +3,7 @@ import { Employee } from '../models/index.js';
 import Team from '../models/teamModel.js';
 import * as genericError from './genericError.js';
 import validator from 'validator';
-import { sendEmail } from '../config/nodeMailer.js';
+import sendEmail from '../config/nodeMailer.js';
 
 
 const handleError = (err, knownErrors = []) => {
@@ -354,7 +354,10 @@ export const getEmployeeProfile = async (employeeId) => {
 export const updateEmployeeProfile = async (employeeId, updateData) => {
     try {
         // Validate update data
-        const allowedUpdates = ['firstName', 'lastName', 'streetNumber', 'city', 'state', 'zipcode', 'country'];
+        const allowedUpdates = [
+            'firstName', 'lastName', 'streetNumber', 'city', 'state', 'zipcode', 'country',
+            'avatar', 'notificationPreferences'
+        ];
         const updates = Object.keys(updateData)
             .filter(key => allowedUpdates.includes(key))
             .reduce((obj, key) => {

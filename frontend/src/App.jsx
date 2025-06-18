@@ -22,6 +22,7 @@ import EditIssue from './components/Admin/components/EditIssue';
 import EmployeeProfile from './components/Employee/EmployeeProfile';
 import CompanyProfile from './components/Admin/components/CompanyProfile';
 import AssignedIssueSolve from './components/Dashboard/components/AssignedIssueSolve';
+import ProjectDashboard from './components/ProjectManagement/ProjectDashboard';
 
 // Layout Components
 import Navigation from './components/Common/Navigation';
@@ -137,6 +138,7 @@ const AppRoutes = () => {
                 <Routes>
                   <Route path="dashboard" element={<TeamDashboard />} />
                   <Route path="assigned-issues/:id/solve" element={<AssignedIssueSolve />} />
+                  <Route path="team/:teamId/projects" element={<ProjectDashboard />} />
                 </Routes>
               </ProtectedRoute>
             }
