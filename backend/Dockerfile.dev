@@ -1,0 +1,23 @@
+# Use Node.js base image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install nodemon globally for development
+RUN npm install -g nodemon
+
+# Copy package files first to leverage Docker cache
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Note: We don't copy the source code here
+# It will be mounted as a volume in docker-compose.dev.yml
+
+# Expose development port
+EXPOSE 5000
+
+# Start development server with nodemon
+CMD ["npm", "run", "dev"]
