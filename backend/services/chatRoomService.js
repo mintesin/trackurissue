@@ -4,6 +4,7 @@ import webSocketService from './webSocketService.js';
 
 /**
  * Create a new chat room for a team
+//  * Createe a new chat room for a team
  * @param {string} teamId - Team ID
  * @param {Array} participants - Array of participant IDs
  * @returns {Promise<Object>} Created chat room

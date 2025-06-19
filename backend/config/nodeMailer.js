@@ -1,89 +1,89 @@
-// Import the Brevo (Sendinblue) SDK
-import SibApiV3Sdk from 'sib-api-v3-sdk';
+import sibApiV3Sdk from 'sib-api-v3-sdk';
+import dotenv from 'dotenv';
 
-// Initialize the default API client instance
-const defaultClient = SibApiV3Sdk.ApiClient.instance;
+// Load environment variables from .env file
+dotenv.config();
 
-// Configure the API key authentication using your environment variable
+// Initialize the Brevo API client
+const defaultClient = sibApiV3Sdk.ApiClient.instance;
+
+// Set up API key authentication using environment variable
 const apiKey = defaultClient.authentications['api-key'];
 apiKey.apiKey = process.env.BREVO_API_KEY;
 
-// Create an instance of the TransactionalEmailsApi
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+// Create an instance of the Transactional Emails API
+const transactionalEmailsApi = new sibApiV3Sdk.TransactionalEmailsApi();
 
 /**
- * Sends an email using Brevo (Sendinblue)
- * 
- * @param {string} to - Recipient email address
- * @param {string} subject - Subject line of the email
- * @param {string} text - Plain text version of the email content
- * @param {string} [html] - Optional HTML content for rich formatting
- * @param {string} [receiverName] - Optional name of the recipient
- * @returns {Promise<Object>} - Returns the API response object if email is sent successfully
- * @throws {Error} - Throws an error if the email fails to send
+ * Sends an email using Brevo (Sendinblue) transactional email API.
+ *
+ * @async
+ * @function sendEmail
+ * @param {string} recipient - The recipient's email address.
+ * @param {string} subject - The subject of the email.
+ * @param {string} message - The content of the email body (plain text or HTML).
+ * @returns {Promise<void>} Resolves when the email is sent or logs an error if sending fails.
+ *
+ * @example
+ * sendEmail('user@example.com', 'Welcome!', 'This is your welcome message.');
  */
-const sendEmail = async (to, subject, text, html = null, receiverName = null) => {
-  // Validate required parameters
-  if (!to || !subject || !text) {
-    throw new Error('Missing required parameters: to, subject, and text are required');
+async function sendEmail(recipient, subject, message) {
+  // Convert plain text line breaks to HTML if the message is plain text
+  const isHtml = message.includes('<') && message.includes('>');
+  let htmlContent;
+  
+  if (isHtml) {
+    // If message already contains HTML tags, use it as is
+    htmlContent = message;
+  } else {
+    // Convert plain text to HTML format
+    const formattedMessage = message
+      .replace(/\n\n/g, '</p><p>')  // Double line breaks become paragraph breaks
+      .replace(/\n/g, '<br>')       // Single line breaks become <br> tags
+      .trim();
+    
+    htmlContent = `
+      <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">Hello,</h3>
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+              <p style="margin: 0;">${formattedMessage}</p>
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 12px; color: #666; margin: 0;">
+              This is an automated message from trackurIssue. Please do not reply to this email.
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
   }
 
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(to)) {
-    throw new Error('Invalid email format');
-  }
-  // Create a new SendSmtpEmail object which holds all email content
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-
-  // Set the sender details (name and email address), falling back to default values
-  sendSmtpEmail.sender = {
-    name: process.env.EMAIL_SENDER_NAME || 'Trackurissue',
-    email: process.env.EMAIL_SENDER_ADDRESS || 'no-reply@yourdomain.com'
+  // Define the email payload
+  const sendSmtpEmail = {
+    sender: { 
+      name: 'trackurIssue',
+      email: 'argawmintesinot@gmail.com' // Change to your verified sender if needed
+    },
+    to: [{ email: recipient }],
+    subject: subject,
+    htmlContent: htmlContent
   };
 
-  // Set the recipient (email and optional name)
-  sendSmtpEmail.to = [
-    {
-      email: to,
-      name: receiverName || to // If receiverName is not provided, use the email as the name
-    }
-  ];
-
-  // Set the subject and plain text content of the email
-  sendSmtpEmail.subject = subject;
-  sendSmtpEmail.textContent = text;
-
-  // Optionally add HTML content if provided
-  if (html) {
-    sendSmtpEmail.htmlContent = html;
-  }
-
   try {
-    // Attempt to send the email through the API
-    const response = await apiInstance.sendTransacEmail(sendSmtpEmail);
-
-    // Log the successful response
-    console.log('Email sent successfully:', {
-      messageId: response.messageId,
-      to,
-      subject
-    });
-
-    // Return the API response
+    // Send the transactional email
+    const response = await transactionalEmailsApi.sendTransacEmail(sendSmtpEmail);
+    console.log('✅ Email sent successfully to:', recipient);
     return response;
   } catch (error) {
-    // Log the error details
-    console.error('Failed to send email:', {
-      to,
-      subject,
-      error: error.message || error
-    });
-
-    // Rethrow a new error to notify calling code of failure
-    throw new Error('Email sending failed');
+    // Log any errors that occur during sending
+    console.error('❌ Failed to send email to:', recipient, error);
+    throw error; // Re-throw to allow calling code to handle the error
   }
-};
+}
 
-// Export the sendEmail function as the default export
 export default sendEmail;
+
+// Example usage (uncomment to test):
+// sendEmail('mintd060@gmail.com', 'Welcome!', 'This is a normal paragraph text below the hello.');

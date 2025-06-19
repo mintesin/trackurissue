@@ -7,6 +7,7 @@ services:
     container_name: trackurissue-mongodb-test
     restart: unless-stopped
     environment:
+      # Use environment variables for credentials and DB name (set in .env file)
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
       MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-trackurissue_test}
@@ -14,6 +15,7 @@ services:
       - "27018:27017"
     volumes:
       - mongodb_data_test:/data/db
+      # Initialize DB with script on container start
       - ./backend/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - trackurissue-test-network
@@ -41,6 +43,7 @@ services:
     environment:
       NODE_ENV: test
       PORT: 5001
+      # Use environment variables for DB and cache connection strings
       MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb-test:27017/${MONGO_DB_NAME:-trackurissue_test}?authSource=admin
       REDIS_URL: redis://:${REDIS_PASSWORD:-redis123}@redis-test:6379
       JWT_SECRET: ${JWT_SECRET:-test-jwt-secret}
@@ -50,47 +53,20 @@ services:
     ports:
       - "5001:5001"
     volumes:
+      # Mount backend code for test hot-reloading
       - ./backend:/app
-      - /app/node_modules
-      - ./backend/logs:/app/logs
     depends_on:
       - mongodb-test
       - redis-test
     networks:
       - trackurissue-test-network
-    command: ["npm", "run", "test:watch"]
 
-  # Frontend Test Environment
-  frontend-test:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: trackurissue-frontend-test
-    restart: unless-stopped
-    environment:
-      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:5001}
-      REACT_APP_ENVIRONMENT: test
-      VITE_PORT: 5174
-    ports:
-      - "5174:5174"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    depends_on:
-      - backend-test
-    networks:
-      - trackurissue-test-network
-    command: ["npm", "run", "dev", "--", "--port", "5174"]
-
+# Named volumes for persistent data (clean up after test runs)
 volumes:
   mongodb_data_test:
-    driver: local
   redis_data_test:
-    driver: local
 
+# Custom network for test isolation
 networks:
   trackurissue-test-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16

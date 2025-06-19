@@ -16,7 +16,7 @@
 import axios from 'axios';
 
 /** Base URL for all API requests */
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://localhost:5000/api';
 
 /**
  * Create axios instance with default configuration

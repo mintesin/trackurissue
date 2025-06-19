@@ -114,18 +114,25 @@ export const resetAccountPost = async (resetData) => {
 
         // Send email notification for password reset
         const emailSubject = 'Company Account Password Reset';
-        const emailText = `Hello ${company.adminName},\n\n` +
-                         `Welcome back to the platform!\n` +
-                         `Your password has been reset for ${company.companyName}.\n` +
-                         `Your new temporary password is: ${passwordToUse}\n\n` +
-                         `Please log in and change your password as soon as possible.\n\n` +
-                         `Best regards,\nSystem Administration`;
+        const emailText = `Hello ${company.adminName},
+
+Welcome back to the platform!
+
+Your password has been reset for ${company.companyName}.
+
+Your new temporary password is: ${passwordToUse}
+
+Please log in and change your password as soon as possible.
+
+Best regards,
+System Administration`;
 
         try {
             await sendEmail(company.adminEmail, emailSubject, emailText);
             console.log('Password reset email sent successfully to', company.adminEmail);
         } catch (emailError) {
             console.error('Failed to send password reset email:', emailError);
+            // Don't throw error - password reset was successful, email is just notification
         }
 
         return {
@@ -458,19 +465,25 @@ export const registerPost = async (companyData) => {
         
         // Send welcome email to company admin
         const emailSubject = 'Welcome to Our Platform';
-        const emailText = `Hello ${adminName},\n\n` +
-                         `Welcome to our platform! Your company ${companyName} has been successfully registered.\n\n` +
-                         `Your account details:\n` +
-                         `Email: ${adminEmail}\n` +
-                         `Password: ${password}\n\n` +
-                         `Please keep these credentials safe and change your password after your first login.\n\n` +
-                         `Best regards,\nSystem Administration`;
+        const emailText = `Hello ${adminName},
+
+Welcome to our platform! Your company ${companyName} has been successfully registered.
+
+Your account details:
+Email: ${adminEmail}
+Password: ${password}
+
+Please keep these credentials safe and change your password after your first login.
+
+Best regards,
+System Administration`;
 
         try {
             await sendEmail(adminEmail, emailSubject, emailText);
             console.log('Welcome email sent successfully to', adminEmail);
         } catch (emailError) {
             console.error('Failed to send welcome email:', emailError);
+            // Don't throw error - registration was successful, email is just notification
         }
 
         // 6. Remove sensitive data before sending response

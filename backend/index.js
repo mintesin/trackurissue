@@ -38,10 +38,12 @@ dotenv.config();
 
 const app = express();
 
+console.log('Backend server starting...');
+
 // Trust first proxy for Heroku
 app.set('trust proxy', 1);
 
-// Security Middleware with Heroku-specific settings
+// Security Middleware with Heroku-sepecific settings
 app.use(helmet({
     contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
         directives: {
@@ -75,6 +77,7 @@ app.use(loggingService.createRequestLogger());
 app.use(monitoringService.createMonitoringMiddleware());
 
 // Apply rate limiting to all API routes
+
 app.use('/api', apiLimiter);
 
 // Routes with /api prefix
@@ -92,6 +95,7 @@ app.use('/api/monitoring', monitoringRoutes);
 app.use(loggingService.createErrorLogger());
 
 // Global error handling
+// Global error handli ng
 app.use(errorHandler);
 
 // Handle unhandled routes

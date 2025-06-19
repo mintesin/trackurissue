@@ -5,7 +5,7 @@ import * as createdIssueService from './createdIssueService.js';
 import Notification from '../models/notificationModel.js';
 
 /**
- * Get all assigned issues for a team
+//  * Get all assigned issues for a team
  * @param {string} teamId - The team ID
  * @returns {Promise<Array>} Array of assigned issues
  */

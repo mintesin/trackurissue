@@ -212,17 +212,23 @@ export const employeeResetPasswordPost = async (resetData) => {
 
         // Send password reset notification email
         const emailSubject = 'Employee Account Password Reset';
-        const emailText = `Hello ${employee.firstName} ${employee.lastName},\n\n` +
-                         `Your password has been reset successfully.\n` +
-                         `Your new temporary password is: ${newPassword}\n\n` +
-                         `Please log in and change your password as soon as possible for security purposes.\n\n` +
-                         `Best regards,\nCompany HR`;
+        const emailText = `Hello ${employee.firstName} ${employee.lastName},
+
+Your password has been reset successfully.
+
+Your new temporary password is: ${newPassword}
+
+Please log in and change your password as soon as possible for security purposes.
+
+Best regards,
+Company HR`;
 
         try {
             await sendEmail(employee.employeeEmail, emailSubject, emailText);
             console.log('Password reset email sent successfully to', employee.employeeEmail);
         } catch (emailError) {
             console.error('Failed to send password reset email:', emailError);
+            // Don't throw error - password reset was successful, email is just notification
         }
 
         return {
@@ -445,29 +451,43 @@ export const registerEmployee = async (employeeData) => {
 
         // Send registration email with temporary password and team leader notification
         const emailSubject = 'Welcome to the Company - Your Account Details';
-        let emailText = `Hello ${employee.firstName} ${employee.lastName},\n\n` +
-                        `You have been registered as an employee of ${populatedEmployee.company.companyName}.\n`;
+        let emailText = `Hello ${employee.firstName} ${employee.lastName},
+
+You have been registered as an employee of ${populatedEmployee.company.companyName}.
+
+`;
 
         if (populatedEmployee.team) {
-            emailText += `You have been assigned to the team: ${populatedEmployee.team.teamName}\n`;
+            emailText += `You have been assigned to the team: ${populatedEmployee.team.teamName}
+
+`;
         } else {
-            emailText += `You have not been assigned to a team yet. Your manager will assign you to a team soon.\n`;
+            emailText += `You have not been assigned to a team yet. Your manager will assign you to a team soon.
+
+`;
         }
 
-        emailText += `Your temporary password is: ${password}\n\n`;
+        emailText += `Your temporary password is: ${password}
+
+`;
 
         if (employeeData.isTeamLeader) {
-            emailText += 'You have been assigned as a Team Leader.\n\n';
+            emailText += `You have been assigned as a Team Leader.
+
+`;
         }
 
-        emailText += 'Please log in and change your password as soon as possible.\n\n' +
-                     'Best regards,\nCompany HR';
+        emailText += `Please log in and change your password as soon as possible.
+
+Best regards,
+Company HR`;
 
         try {
             await sendEmail(employeeEmail, emailSubject, emailText);
             console.log('Registration email sent successfully to', employeeEmail);
         } catch (emailError) {
             console.error('Failed to send registration email:', emailError);
+            // Don't throw error - registration was successful, email is just notification
         }
 
         const employeeResponse = populatedEmployee.toObject();

@@ -1,19 +1,25 @@
-# Use Node.js base image
-FROM node:18-alpine
+# Use Node.js base image for frontend development
+FROM node:18-bullseye
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first to leverage Docker cache
+# Remove existing node_modules and package-lock.json to avoid npm optional dependencies bug
+RUN rm -rf node_modules package-lock.json
+
+# Copy package files firs to leverage Docker cache
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies cleanly with legacy-peer-deps flag
+RUN npm install --legacy-peer-deps
 
-# Note: Source code will be mounted as volume in docker-compose.dev.yml
+# Note: Source code will be mounted as a volume in docker-compose.dev.yml
 
-# Expose Vite dev server port
+# Expose Vite dev server port for local development
 EXPOSE 5173
+
+# Debug: Print npm version to ensure npm is installed
+RUN npm --version
 
 # Start Vite dev server with host binding for Docker
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
