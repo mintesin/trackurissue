@@ -66,6 +66,22 @@ const CompanyRegister = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="bg-white p-8 rounded shadow text-center">
+          <div className="mb-4 text-red-700 font-semibold">{error}</div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -157,6 +173,22 @@ const CompanyRegister = () => {
             ))}
 
             <div>
+              <div className="flex items-start mb-4">
+                <input
+                  id="agree"
+                  name="agree"
+                  type="checkbox"
+                  required
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="agree" className="ml-2 block text-sm text-gray-700">
+                  I agree to the
+                  <Link to="/terms" className="text-blue-600 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Terms of Service</Link>
+                  and
+                  <Link to="/privacy" className="text-blue-600 hover:underline mx-1" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>
+                  of the company.
+                </label>
+              </div>
               <button
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

@@ -53,7 +53,48 @@ const crIssueSchema = new Schema({
 	solvedAt: {
 		type: Date,
 		default: null
-	}
+	},
+	// Project Management fields
+	sprint: {
+		type: Schema.Types.ObjectId,
+		ref: 'Sprint',
+		default: null
+	},
+	milestone: {
+		type: Schema.Types.ObjectId,
+		ref: 'Milestone',
+		default: null
+	},
+	storyPoints: {
+		type: Number,
+		min: 0,
+		max: 100,
+		default: 0
+	},
+	kanbanStatus: {
+		type: String,
+		enum: ['backlog', 'todo', 'inProgress', 'review', 'done'],
+		default: 'backlog'
+	},
+	priority: {
+		type: String,
+		enum: ['low', 'medium', 'high', 'critical'],
+		default: 'medium'
+	},
+	estimatedHours: {
+		type: Number,
+		min: 0,
+		default: 0
+	},
+	actualHours: {
+		type: Number,
+		min: 0,
+		default: 0
+	},
+	labels: [{
+		type: String,
+		trim: true
+	}]
 })
 
 const crIssueModel = mongoose.model('createdIssue',crIssueSchema)

@@ -8,7 +8,7 @@ import CreateTeamModal from './components/CreateTeamModal';
 import AddEmployeeModal from './components/AddEmployeeModal';
 import CreateIssueModal from './components/CreateIssueModal';
 import CreatedIssuesGrid from './components/CreatedIssuesGrid';
-import Pagination from '../common/Pagination';
+import Pagination from '../Common/Pagination';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -161,11 +161,25 @@ const CompanyDashboard = () => {
     }
   };
 
-  // Pagination calculations for issues
-  const totalPages = Math.ceil(issues.length / ITEMS_PER_PAGE);
+  // Filter state for issues
+  const [issueFilter, setIssueFilter] = useState('all'); // all, urgent, assigned, solved
+  const [searchTopic, setSearchTopic] = useState('');
+
+  // Filter issues based on selected filter and search
+  const filteredIssues = issues.filter(issue => {
+    const matchesFilter = (
+      issueFilter === 'all' ||
+      (issueFilter === 'urgent' && issue.urgency === 'urgent') ||
+      (issueFilter === 'assigned' && issue.status === 'assigned') ||
+      (issueFilter === 'solved' && issue.status === 'solved')
+    );
+    const matchesSearch = issue.topic?.toLowerCase().includes(searchTopic.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+  const totalPages = Math.ceil(filteredIssues.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentIssues = issues.slice(startIndex, endIndex);
+  const currentIssues = filteredIssues.slice(startIndex, endIndex);
 
   // Handles page change for pagination
   const handlePageChange = (page) => {
@@ -195,6 +209,33 @@ const CompanyDashboard = () => {
             setIsAddEmployeeModalOpen(false);
           }}
         />
+
+        {/* Issue Filter and Search Controls */}
+        <div className="flex flex-col md:flex-row md:items-center mb-4 gap-2 md:gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-white font-medium">Filter Issues:</label>
+            <select
+              value={issueFilter}
+              onChange={e => { setIssueFilter(e.target.value); setCurrentPage(1); }}
+              className="bg-gray-700 text-white px-3 py-1 rounded border border-gray-600"
+            >
+              <option value="all">All</option>
+              <option value="urgent">Urgent</option>
+              <option value="assigned">Assigned</option>
+              <option value="solved">Solved</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-white font-medium">Search Topic:</label>
+            <input
+              type="text"
+              value={searchTopic}
+              onChange={e => { setSearchTopic(e.target.value); setCurrentPage(1); }}
+              placeholder="Enter topic..."
+              className="bg-gray-700 text-white px-3 py-1 rounded border border-gray-600"
+            />
+          </div>
+        </div>
 
         <div className="flex flex-col md:flex-row gap-8 mt-8">
           {/* Left Section - Issues */}

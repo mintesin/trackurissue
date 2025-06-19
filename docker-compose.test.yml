@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Test MongoDB Database
+  mongodb-test:
+    image: mongo:7.0
+    container_name: trackurissue-mongodb-test
+    restart: unless-stopped
+    environment:
+      # Use environment variables for credentials and DB name (set in .env file)
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-trackurissue_test}
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data_test:/data/db
+      # Initialize DB with script on container start
+      - ./backend/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - trackurissue-test-network
+
+  # Test Redis Cache
+  redis-test:
+    image: redis:7.2-alpine
+    container_name: trackurissue-redis-test
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data_test:/data
+    networks:
+      - trackurissue-test-network
+
+  # Backend Test Environment
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: trackurissue-backend-test
+    restart: unless-stopped
+    environment:
+      NODE_ENV: test
+      PORT: 5001
+      # Use environment variables for DB and cache connection strings
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb-test:27017/${MONGO_DB_NAME:-trackurissue_test}?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis123}@redis-test:6379
+      JWT_SECRET: ${JWT_SECRET:-test-jwt-secret}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:-test-refresh-token-secret}
+      LOG_LEVEL: error
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5174}
+    ports:
+      - "5001:5001"
+    volumes:
+      # Mount backend code for test hot-reloading
+      - ./backend:/app
+    depends_on:
+      - mongodb-test
+      - redis-test
+    networks:
+      - trackurissue-test-network
+
+# Named volumes for persistent data (clean up after test runs)
+volumes:
+  mongodb_data_test:
+  redis_data_test:
+
+# Custom network for test isolation
+networks:
+  trackurissue-test-network:
+    driver: bridge

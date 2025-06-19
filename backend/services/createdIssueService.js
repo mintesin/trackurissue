@@ -3,6 +3,7 @@ import crIssueModel from '../models/createdIssueModel.js'
 import teamModel from '../models/teamModel.js'
 import assignedIssueModel from '../models/assignedIssueModel.js'
 import * as genericError from './genericError.js'
+import Notification from '../models/notificationModel.js'
 
 // Helper function to sanitize issue data
 const sanitizeIssueData = (issue) => {
@@ -303,6 +304,21 @@ export const assignIssue = async (issueId, teamId) => {
             theIssue.save(),
             assignedIssueInstance.save()
         ]);
+
+        // Notify all team members about the new assignment
+        if (Array.isArray(theTeam.members)) {
+            await Promise.all(theTeam.members.map(memberId =>
+                Notification.create({
+                    user: memberId,
+                    type: 'issue_assigned',
+                    message: `A new issue "${theIssue.topic}" has been assigned to your team (${theTeam.teamName}).`,
+                    data: {
+                        issueId: theIssue._id,
+                        teamId: theTeam._id
+                    }
+                })
+            ));
+        }
 
         const issueWithTeam = {
             ...theIssue.toObject(),

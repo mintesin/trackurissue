@@ -14,21 +14,12 @@ async function connectDb(uri) {
     try {
         // Security options for MongoDB connection
         const options = {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             // Maximum number of connections in the pool
             maxPoolSize: 10,
             // How long to wait for a connection from the pool (5 seconds)
             serverSelectionTimeoutMS: 5000,
             // How long to wait for a response from the server (30 seconds)
             socketTimeoutMS: 30000,
-            // SSL configuration for production
-            ...(process.env.NODE_ENV === 'production' && {
-                ssl: true,
-                sslValidate: true,
-                // If using MongoDB Atlas or similar service that provides CA
-                // sslCA: process.env.MONGO_CA_CERT
-            }),
             // Ensure queries use indexes
             autoIndex: process.env.NODE_ENV !== 'production',
             // Prevent potentially malicious query operators

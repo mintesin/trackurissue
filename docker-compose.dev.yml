@@ -1,0 +1,90 @@
+services:
+  # MongoDB Database for Development
+  mongodb:
+    image: mongo:7.0
+    container_name: trackurissue-mongodb-dev
+    restart: unless-stopped
+    environment:
+      # Use environment variables for credentials and DB name (set in .env file)
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-trackurissue}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_dev:/data/db
+      # Initialize DB with script on container start
+      - ./backend/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - trackurissue-network
+
+  # Redis Cache for Development
+  redis:
+    image: redis:7.2-alpine
+    container_name: trackurissue-redis-dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - trackurissue-network
+
+  # Backend API for Development
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: trackurissue-backend-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      # Use environment variables for DB and cache connection strings
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password123}@mongodb:27017/${MONGO_DB_NAME:-trackurissue}?authSource=admin
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis123}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:-your-super-secret-refresh-token-key}
+      LOG_LEVEL: debug
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount backend code for hot-reloading
+      - ./backend:/app
+      # Preserve node_modules in container
+      - /app/node_modules
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - trackurissue-network
+
+  # Frontend for Development (uncomment if needed)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: trackurissue-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - trackurissue-network
+
+# Named volumes for persistent data
+volumes:
+  mongodb_data_dev:
+  redis_data_dev:
+  frontend_node_modules:
+
+# Custom network for isolation
+networks:
+  trackurissue-network:
+    driver: bridge

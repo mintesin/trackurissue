@@ -49,6 +49,15 @@ const employeeSchema = new Schema({
         required: true,
         trim: true
     },
+    avatar: {
+        type: String, // URL to avatar image
+        required: false,
+        trim: true
+    },
+    notificationPreferences: {
+        email: { type: Boolean, default: true },
+        sms: { type: Boolean, default: false }
+    },
     favoriteWord: {
         type: String,
         required: true,

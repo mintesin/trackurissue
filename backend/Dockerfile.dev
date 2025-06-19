@@ -1,0 +1,23 @@
+# Use Node.js base image for development
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install nodemon globally for hot-reloading in development
+RUN npm install -g nodemon
+
+# Copy package files first to leverage Docker cache
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Copy source code (will be overridden by volume mount in development)
+COPY . .
+
+# Expose development port
+EXPOSE 5000
+
+# Start development server with nodemon for live reload
+CMD ["npm", "run", "dev"]

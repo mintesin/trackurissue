@@ -13,13 +13,16 @@
  */
 
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useEffect } from 'react';
+import { loginSuccess } from './store/slices/authSlice';
 import IssueDetails from './components/Admin/components/IssueDetails';
 import AssignIssue from './components/Admin/components/AssignIssue';
 import EditIssue from './components/Admin/components/EditIssue';
 import EmployeeProfile from './components/Employee/EmployeeProfile';
 import CompanyProfile from './components/Admin/components/CompanyProfile';
 import AssignedIssueSolve from './components/Dashboard/components/AssignedIssueSolve';
+import ProjectDashboard from './components/ProjectManagement/ProjectDashboard';
 
 // Layout Components
 import Navigation from './components/Common/Navigation';
@@ -135,6 +138,7 @@ const AppRoutes = () => {
                 <Routes>
                   <Route path="dashboard" element={<TeamDashboard />} />
                   <Route path="assigned-issues/:id/solve" element={<AssignedIssueSolve />} />
+                  <Route path="team/:teamId/projects" element={<ProjectDashboard />} />
                 </Routes>
               </ProtectedRoute>
             }
@@ -171,6 +175,20 @@ const AppRoutes = () => {
 };
 
 function App() {
+  const dispatch = useDispatch();
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    const role = localStorage.getItem('role');
+    if (token && user && role) {
+      dispatch(loginSuccess({
+        user: JSON.parse(user),
+        token,
+        role
+      }));
+    }
+  }, [dispatch]);
+
   return (
     <Router>
       <AppRoutes />

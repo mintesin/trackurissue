@@ -2,17 +2,18 @@ import mongoose from 'mongoose';
 import assignedIssueModel from '../models/assignedIssueModel.js';
 import teamModel from '../models/teamModel.js';
 import * as createdIssueService from './createdIssueService.js';
+import Notification from '../models/notificationModel.js';
 
 /**
- * Get all assigned issues for a team
+//  * Get all assigned issues for a team
  * @param {string} teamId - The team ID
  * @returns {Promise<Array>} Array of assigned issues
  */
 export const getAssignedIssues = async (teamId) => {
     try {
-        console.log('Service - Getting assigned issues for team:', teamId);
+        // console.log('Service - Getting assigned issues for team:', teamId);
         
-        const team = await teamModel.findById(teamId);
+        const team = await teamModel.findById(teamId).lean();
         if (!team) {
             throw new Error('Team not found');
         }
@@ -36,11 +37,11 @@ export const getAssignedIssues = async (teamId) => {
             .lean();
 
         if (!issues || issues.length === 0) {
-            console.log('No issues found for team:', teamId);
+            // console.log('No issues found for team:', teamId);
             return [];
         }
 
-        console.log('Service - Found issues:', issues);
+        // console.log('Service - Found issues:', issues);
         return issues;
     } catch (error) {
         throw error;
@@ -64,14 +65,15 @@ export const getSolveIssueData = async (issueId) => {
                 path: 'assignee',
                 select: 'firstName lastName email',
                 model: 'Employee'
-            });
+            })
+            .lean();
             
         if (!issue) {
             throw new Error('Assigned issue not found');
         }
 
         return {
-            ...issue.toObject(),
+            ...issue,
             solutionFields: {
                 solution: '',
                 additionalNotes: ''
@@ -110,11 +112,21 @@ export const solveIssue = async (issueId, solution, additionalNotes) => {
                     }
                 ]
             }
-        );
+        ).lean();
 
         // Update original issue with solution
+        let createdIssueId;
+        if (updatedAssignedIssue && updatedAssignedIssue.issue) {
+            createdIssueId = typeof updatedAssignedIssue.issue === 'object'
+                ? updatedAssignedIssue.issue._id
+                : updatedAssignedIssue.issue;
+        } else {
+            throw new Error('Assigned issue does not have a valid issue reference');
+        }
+
+        // Now use createdIssueId below this point
         const updatedIssue = await createdIssueService.updateIssue(
-            updatedAssignedIssue.issue,
+            createdIssueId,
             {
                 status: 'solved',
                 solution,
@@ -123,8 +135,21 @@ export const solveIssue = async (issueId, solution, additionalNotes) => {
             }
         );
 
+        // Create notification for the assignee (if exists)
+        if (updatedAssignedIssue.assignee) {
+            await Notification.create({
+                user: updatedAssignedIssue.assignee,
+                type: 'issue_status',
+                message: `Issue "${updatedIssue.topic}" has been marked as solved.`,
+                data: {
+                    issueId: createdIssueId,
+                    status: 'solved'
+                }
+            });
+        }
+
         return {
-            ...updatedAssignedIssue.toObject(),
+            ...updatedAssignedIssue,
             issue: updatedIssue
         };
     } catch (error) {

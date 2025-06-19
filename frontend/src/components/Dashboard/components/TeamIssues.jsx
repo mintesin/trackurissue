@@ -8,7 +8,7 @@
 
 import React from 'react'; // Import React for component creation and hooks
 import { Link } from 'react-router-dom'; // Import Link for navigation
-import Pagination from '../../common/Pagination'; // Import Pagination component
+import Pagination from '../../Common/Pagination'; // Import Pagination component
 
 // Number of issues to display per page
 const ITEMS_PER_PAGE = 5;
